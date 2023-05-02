@@ -8,7 +8,7 @@ import re
 htmldata = None
 splitter_data = {}
 
-year = "2022"
+year = "2023"
 months = ["01","02","03","04","05","06","07","08","09","10","11","12"]
 days = ["01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31"]
 
@@ -29,7 +29,7 @@ already = set([])
 type_names = ["新","再","終","手","字","双","デ","S","二","多","解","SS","B","N","天","交","映","料","前","後","初","生","HV","PV","PS","吹","契","幕","無","PG12","R15","4K","HDR","5.1ch","8K","22.2ch"]
 
 # キー局との差分抽出に使う配列
-main_channels = ["NTV", "TBS", "CX", "EX", "TX", "CTC", "GTV", "MTV", "SUN", "ABS", "TSK", "KYT", "BS1", "BS4", "BS5", "BS6", "BS7", "BS8", "G10", "G11", "G12", "G13", "G14", "G15", "G16", "G17", "G18", "G19", "G20", "G21", "G22", "G23", "G25", "G26", "G28", "G30", "G31", "G32", "G33", "G34", "G35", "G36", "G37", "G38", "G39", "G40", "G41", "G42", "G43", "G44", "G45", "G46", "G47", "G48", "G49", "G50", "G51", "G52", "G53", "G54", "G55", "G56", "G57", "G58", "G59", "G60", "G61", "G62", "Gkk", "E10", "E11", "E12", "E13", "E14", "E15", "E16", "E17", "E18", "E19", "E20", "E21", "E22", "E23", "E30", "E31", "E32", "E33", "E34", "E35", "E36", "E37", "E40", "E46", "E47", "E48", "E49", "E50", "E51", "E52", "E53", "E54", "E55", "E56", "E57", "E58", "E59", "E60", "E61", "E62", "Ekk", "sG23", "sE23"]
+main_channels = ["NTV", "TBS", "CX", "EX", "TX", "CTC", "GTV", "MTV", "SUN", "ABS", "TSK", "KYT", "BS1", "BS4", "BS5", "BS6", "BS7", "BS8", "OU1", "G10", "G11", "G12", "G13", "G14", "G15", "G16", "G17", "G18", "G19", "G20", "G21", "G22", "G23", "G25", "G26", "G28", "G30", "G31", "G32", "G33", "G34", "G35", "G36", "G37", "G38", "G39", "G40", "G41", "G42", "G43", "G44", "G45", "G46", "G47", "G48", "G49", "G50", "G51", "G52", "G53", "G54", "G55", "G56", "G57", "G58", "G59", "G60", "G61", "G62", "Gkk", "E10", "E11", "E12", "E13", "E14", "E15", "E16", "E17", "E18", "E19", "E20", "E21", "E22", "E23", "E30", "E31", "E32", "E33", "E34", "E35", "E36", "E37", "E40", "E46", "E47", "E48", "E49", "E50", "E51", "E52", "E53", "E54", "E55", "E56", "E57", "E58", "E59", "E60", "E61", "E62", "Ekk", "sG23", "sE23"]
 # 並び順はどうでもよく、含むかどうかを調べたい場合はsetを使う
 standard_programs_set = {}
 # タイトルは同じだが概要文が違う物の検出に使う
@@ -134,6 +134,8 @@ def get_my_key_station(station_tag):
 		return "BS7"
 	elif station_tag == "FK8" or station_tag == "BF2":
 		return "BS8"
+	elif station_tag == "OU2":
+		return "OU1"
 	elif station_tag.startswith("sG"):
 		return station_tag[1:]
 	elif station_tag.startswith("sE"):
@@ -411,7 +413,7 @@ def split_title_chapter(title_string, station_tag, year, month):
 
 		# 長野放送のサブタイトル
 		if station_tag == "NBS":
-			matchObj = re.search(r'＜[^＜＞]+(＞|…)(#[0-9]+)*$', title_string)
+			matchObj = re.search(r'＜[^＜＞]+(＞|…)\s*(#[0-9]+)*$', title_string)
 			if matchObj:
 				bracePointer = matchObj.start()
 

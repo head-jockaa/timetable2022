@@ -96,6 +96,8 @@ def getCategoryCode(title_name):
 		return "100108"
 	elif title_name == "兵庫県議会中継":
 		return "100109"
+	elif "マラソン" in title_name:
+		return "101107"
 	elif title_name == "5時に夢中!":
 		return "102100"
 	else:

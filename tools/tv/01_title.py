@@ -58,7 +58,7 @@ def get_timetable(year, month, day, area):
 		last_programs_interval = 0
 		pre_start_time = ""
 		start_time = ""
-		station_tag = tvlist.get_station_name_tag(tvkingdom.extractStationName(program_part))
+		station_tag = tvlist.get_station_name_tag(tvkingdom.extractStationName(program_part), area)
 		if station_tag == "" or station_tag in util.already:
 			continue
 		util.already.add(station_tag)
@@ -307,6 +307,11 @@ def get_timetable_nhk(year,month,day,nhk_area):
 		if colspan == 2:
 			rowspan[idx+1] += interval
 
+		if idx == 0 and colspan == 1:
+			g_main_start_time = nhk.extractStartTime(program_cell, rowspan[idx])
+			g_main_interval = interval
+			g_main_title = nhk.extractTitle(program_cell)
+
 		if station_tags[idx] == "":
 			continue
 
@@ -373,6 +378,9 @@ def get_timetable_nhk(year,month,day,nhk_area):
 
 		# 題名
 		title_string = nhk.extractTitle(program_cell)
+		if idx == 1 and g_main_start_time == start_time and g_main_interval == interval and g_main_title == title_string:
+			# 同じ番組なのにメインとサブに分かれた変な重複があるので、それを除外する
+			continue
 		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, station_tags[idx], year, month)
 		name_id, chapter_id = append_title(title_name, chapter_name)
 

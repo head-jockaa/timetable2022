@@ -64,7 +64,7 @@ def get_station_name_tag(s):
 		return "IBS"
 	elif s == "CRT栃木放送":
 		return "CRT"
-	elif s == "RadioBerry":
+	elif s == "RadioBerry" or s == "RADIO BERRY":
 		return "RADIOBERRY"
 	elif s == "FM GUNMA":
 		return "FMGUNMA"
@@ -94,7 +94,7 @@ def get_station_name_tag(s):
 		return "FMN"
 	elif s == "CBCラジオ":
 		return "CBC"
-	elif s == "東海ラジオ":
+	elif s == "東海ラジオ" or s == "TOKAI RADIO":
 		return "TOKAIRADIO"
 	elif s == "ぎふチャン":
 		return "GBS"
@@ -106,7 +106,7 @@ def get_station_name_tag(s):
 		return "FMGIFU"
 	elif s == "SBSラジオ":
 		return "SBS"
-	elif s == "K-MIX SHIZUOKA":
+	elif s == "K-MIX SHIZUOKA" or s == "K-MIX":
 		return "KMIX"
 	elif s == "レディオキューブ ＦＭ三重":
 		return "FMMIE"

@@ -263,7 +263,7 @@ def getCategoryCode(title_name):
 		return "100102"
 	elif "マーケット" in title_name:
 		return "100104"
-	elif "オリンピック" in title_name or "パラリンピック" in title_name:
+	elif "オリンピック" in title_name or "パラリンピック" in title_name or "クライミングワールドカップ" in title_name:
 		return "101106"
 	elif "MLB" in title_name or "野球" in title_name:
 		return "101101"
@@ -271,13 +271,13 @@ def getCategoryCode(title_name):
 		return "101102"
 	elif "ゴルフ" in title_name:
 		return "101103"
-	elif "Bリーグ" in title_name or "B2リーグ" in title_name or "Vリーグ" in title_name or "Wリーグ" in title_name or "熱血バスケ" in title_name or "バスケットボール" in title_name or "ラグビー" in title_name or "テニス" in title_name or "ウィンブルドン" in title_name or "卓球" in title_name or "ハンドボール" in title_name or "バレーボール" in title_name or "甲子園ボウル" in title_name or "Nitto" in title_name:
+	elif "Bリーグ" in title_name or "B2リーグ" in title_name or "Vリーグ" in title_name or "Wリーグ" in title_name or "熱血バスケ" in title_name or "バスケットボール" in title_name or "ラグビー" in title_name or "テニス" in title_name or "ウィンブルドン" in title_name or "卓球" in title_name or "ハンドボール" in title_name or "バレーボール" in title_name or "フットボール" in title_name or "甲子園ボウル" in title_name or "Nitto" in title_name:
 		return "101104"
 	elif  "相撲" in title_name or "剣道" in title_name or "柔道" in title_name or "空手道" in title_name:
 		return "101105"
 	elif "競泳" in title_name or "陸上" in title_name:
 		return "101107"
-	elif "ノルディック" in title_name or "アルペン" in title_name or "カーリング" in title_name or "アイスホッケー" in title_name or "スピードスケート" in title_name or "NHK杯フィギュア" in title_name or "NHK杯ジャンプ" in title_name:
+	elif "ノルディック" in title_name or "アルペン" in title_name or "カーリング" in title_name or "アイスホッケー" in title_name or "スピードスケート" in title_name or "スノーボード" in title_name or "NHK杯フィギュア" in title_name or "NHK杯ジャンプ" in title_name:
 		return "101109"
 	elif "ジャンプ" in title_name and "ワールドカップ" in title_name:
 		return "101109"
@@ -285,7 +285,7 @@ def getCategoryCode(title_name):
 		return "101110"
 	elif "体操" in title_name or "クライミング" in title_name:
 		return "101115"
-	elif "スタジオパーク" in title_name:
+	elif "スタジオパーク" in title_name or title_name == "土スタ":
 		return "102107"
 	elif "連続テレビ小説" in title_name:
 		return "103100"
@@ -301,7 +301,7 @@ def getCategoryCode(title_name):
 		return "107100"
 	elif "美景" in title_name or "トラムの旅" in title_name or "世界遺産" in title_name or "大空撮" in title_name or "大縦走" in title_name or "天空の塩田" in title_name or "古代中国" in title_name or "空旅中国" in title_name or title_name == "京都 音めぐり" or title_name == "青海チベット鉄道" or "カラーでよみがえる" in title_name or "音紀行" in title_name or "映像詩" in title_name or "地球でイチバン" in title_name or "ドローン大航海" in title_name or "ゆかりの地を行く" in title_name or "行くぞ!最果て!" in title_name:
 		return "108101"
-	elif "動物" in title_name or "生きもの" in title_name or "小笠原" in title_name or "北アルプス" in title_name or "空中散歩" in title_name or "名峰" in title_name or "にっぽん百名山" in title_name or "巨樹の旅" in title_name:
+	elif "動物" in title_name or "生きもの" in title_name or "小笠原" in title_name or "北アルプス" in title_name or "空中散歩" in title_name or "名峰" in title_name or "にっぽん百名山" in title_name or "巨樹の旅" in title_name or "ふるさとの絶景" in title_name:
 		return "108102"
 	elif "クルージング" in title_name:
 		return "110100"

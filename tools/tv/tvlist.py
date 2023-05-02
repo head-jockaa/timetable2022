@@ -16,7 +16,7 @@ NON_TX_NET = ["RAB", "ABS", "TVI", "YBC", "MMT", "FCT", "YBS", "TENY", "TSB", "S
 OTHER_NET = ["MX", "MX2", "TVK", "TVS", "CTC", "CTC2", "CTC3", "GTV", "TTV", "MTV", "GBS", "SUN", "KBS", "BBC", "TVN", "WTV"]
 
 
-def get_station_name_tag(s):
+def get_station_name_tag(s, area):
 	if s == "ＮＨＫ総合１・札幌":
 		return "G10"
 	elif s == "ＮＨＫ総合１・函館":
@@ -203,7 +203,7 @@ def get_station_name_tag(s):
 		return "E62"
 	elif s == "札幌テレビ":
 		return "STV"
-	elif s == "ＨＢＣ北海道放送":
+	elif s == "ＨＢＣ北海道放送" or s == "ＨＢＣ":
 		return "HBC"
 	elif s == "北海道文化放送":
 		return "UHB"
@@ -504,9 +504,9 @@ def get_station_name_tag(s):
 		return "BS11"
 	elif s == "BS12 トゥエルビ":
 		return "BS12"
-	elif s == "放送大学ex":
+	elif s == "放送大学ex" or (area == "bs2" and s == "放送大学テレビ"):
 		return "OU1"
-	elif s == "放送大学on":
+	elif s == "放送大学on" or (area == "bs2_ON" and s == "放送大学テレビ"):
 		return "OU2"
 	elif s == "グリーンチャンネル":
 		return "GCH"

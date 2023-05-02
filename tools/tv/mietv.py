@@ -68,6 +68,8 @@ def getCategoryCode(title_name):
 		return "100106"
 	elif "野球" in title_name:
 		return "101101"
+	elif "マラソン" in title_name:
+		return "101107"
 	elif "伊勢神宮" in title_name:
 		return "108101"
 	elif "伊勢 美し国から" in title_name:

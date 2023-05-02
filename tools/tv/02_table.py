@@ -37,7 +37,7 @@ def get_timetable(year, month, day, area):
 		last_programs_interval = 0
 		pre_start_time = ""
 		start_time = ""
-		station_tag = tvlist.get_station_name_tag(tvkingdom.extractStationName(program_part))
+		station_tag = tvlist.get_station_name_tag(tvkingdom.extractStationName(program_part), area)
 		if station_tag == "" or station_tag in util.already:
 			continue
 		util.already.add(station_tag)
@@ -58,7 +58,7 @@ def get_timetable(year, month, day, area):
 			start_time, isYesterday = tvkingdom.extractStartTime(item_part)
 
 			if start_time == "":
-				if not isFirst and not (station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29")):
+				if not isFirst and not (station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2","OU2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29")):
 					# 番組情報なし
 					start_time = util.add_interval(pre_yesterday, pre_start_time, last_programs_interval)
 					# パッチあて(情報なしを埋める)
@@ -93,7 +93,7 @@ def get_timetable(year, month, day, area):
 			last_programs_interval = tvkingdom.extractInterval(item_part)
 
 			# チバテレ2などの穴埋め
-			if station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29"):
+			if station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2","OU2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29"):
 				gap_to = start_time
 				for chunk in util.fetch_gaps(station_tag, gap_from, gap_to):
 					programs.append(chunk[:2])
@@ -169,7 +169,7 @@ def get_timetable(year, month, day, area):
 			programs.append(chunk)
 
 		# チバテレ2などの穴埋め
-		if station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29"):
+		if station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2","OU2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29"):
 			gap_to = None
 			for chunk in util.fetch_gaps(station_tag, gap_from, gap_to):
 				programs.append(chunk[:2])
@@ -223,12 +223,12 @@ def get_timetable(year, month, day, area):
 		# 放映時間
 		if len(programs2) >= 1:
 			a = last_programs_interval
-			if not (station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29")):
+			if not (station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2","OU2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29")):
 				programs2[-1] += ":" + str(a)
 			if station_tag in util.main_channels:
 				util.standard_lasttime_interval[station_tag] = a
 
-		if station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29"):
+		if station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2","OU2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29"):
 			if len(programs2) !=0 and len(util.standard_programs_timeline[keysta]) != 0:
 				programs2[-1] += ":" + str(util.standard_lasttime_interval[keysta])
 
@@ -531,8 +531,13 @@ def get_timetable_nhk(year, month, day, nhk_area):
 		if colspan == 2:
 			rowspan[idx+1] += interval
 
+		if idx == 0 and colspan == 1:
+			g_main_start_time = nhk.extractStartTime(program_cell, rowspan[idx])
+			g_main_interval = interval
+			g_main_title = nhk.extractTitle(program_cell)
+
 		if station_tags[idx] == "":
-			continue		
+			continue
 
 		# 時刻
 		start_time = nhk.extractStartTime(program_cell, rowspan[idx])
@@ -606,6 +611,9 @@ def get_timetable_nhk(year, month, day, nhk_area):
 
 		# 題名
 		title_string = nhk.extractTitle(program_cell)
+		if idx == 1 and g_main_start_time == start_time and g_main_interval == interval and g_main_title == title_string:
+			# 同じ番組なのにメインとサブに分かれた変な重複があるので、それを除外する
+			continue
 		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, station_tags[idx], year, month)
 		name_id, chapter_id = get_title_id(title_name, chapter_name)
 

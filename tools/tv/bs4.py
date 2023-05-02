@@ -102,12 +102,14 @@ def extractTimetableOf(html, year, month, day):
 def getCategoryCode(title_name):
 	if "Music" in title_name or "MUSIC" in title_name or "サウンド" in title_name or "SOUND" in title_name or "Sound" in title_name or "名曲" in title_name or "歌謡曲" in title_name or "最新曲" in title_name or "ハヤミミ" in title_name or title_name == "ヒーリングデイズ" or title_name == "J−POPヒストリー" or title_name == "Chill out Time":
 		return "104100"
-	elif "ワールドカップ" in title_name:
-		return "101106"
 	elif "BASEBALL" in title_name:
 		return "101101"
+	elif "FIFA" in title_name:
+		return "101102"
 	elif "ラグビー" in title_name or "RUGBY" in title_name or "B.LEAGUE" in title_name or "バスケットボール" in title_name or "ソフトボール" in title_name:
 		return "101104"
+	elif "ワールドカップ" in title_name:
+		return "101106"
 	elif "お得α" == title_name:
 		return "102104"
 	else:
