@@ -48,6 +48,13 @@ def read_patch_file(year, month, day):
 		elif line.startswith("interval"):
 			interval = line.split(" ")[1]
 			patch_rule[-1]["interval"] = (int)(interval)
+		elif line.startswith("bs8title"):
+			value = line.split(" ")[1]
+			if patch_rule[-1]["interval"] == 0:
+				patch_rule[-1]["interval"] = 30
+			patch_rule[-1]["code"] = getBs8Code(value)
+			patch_rule[-1]["title"] = getBs8Title(value)
+			patch_rule[-1]["desc"] = getBs8Description(value)
 
 def add(station, pre_start_time, start_time):
 	if pre_start_time == None:
@@ -82,3 +89,103 @@ def delete(station, start_time):
 		if station in rule["stations"] and rule["action"] == "delete" and rule["time"] == start_time:
 			return True, rule["interval"]
 	return False, None
+
+def getBs8Code(value):
+	if value == "jewel":
+		return "102104"
+	else:
+		return "104100"
+
+def getBs8Title(value):
+	if value == "jewel":
+		return "ジュエリーライフNEXT[生]"
+	elif value == "poland1":
+		return "MUSIC:S 欧州鉄道の旅・ポーランド①"
+	elif value == "poland2":
+		return "MUSIC:S 欧州鉄道の旅・ポーランド②"
+	elif value == "austlia1":
+		return "MUSIC:S 欧州鉄道の旅・オーストリア①"
+	elif value == "austlia2":
+		return "MUSIC:S 欧州鉄道の旅・オーストリア②"
+	elif value == "italia1":
+		return "MUSIC:S 欧州鉄道の旅・イタリア①"
+	elif value == "italia2":
+		return "MUSIC:S 欧州鉄道の旅・イタリア②"
+	elif value == "oranda1":
+		return "MUSIC:S 欧州鉄道の旅・オランダ①"
+	elif value == "oranda2":
+		return "MUSIC:S 欧州鉄道の旅・オランダ②"
+	elif value == "spain1":
+		return "MUSIC:S 欧州鉄道の旅・スペイン①"
+	elif value == "spain2":
+		return "MUSIC:S 欧州鉄道の旅・スペイン②"
+	elif value == "aqua1":
+		return "MUSIC:S 体感！魅惑のアクアリウム①"
+	elif value == "aqua2":
+		return "MUSIC:S 体感！魅惑のアクアリウム②"
+	elif value == "aqua3":
+		return "MUSIC:S 体感！魅惑のアクアリウム③"
+	elif value == "taki1":
+		return "MUSIC:S にっぽん名滝探訪①"
+	elif value == "taki2":
+		return "MUSIC:S にっぽん名滝探訪②"
+	elif value == "taki3":
+		return "MUSIC:S にっぽん名滝探訪③"
+	elif value == "island1":
+		return "MUSIC:S グレートアイランド 悠久の時を生きる①"
+	elif value == "island2":
+		return "MUSIC:S グレートアイランド 悠久の時を生きる②"
+	elif value == "kitchen1":
+		return "MUSIC:S キッチン百景①"
+	elif value == "kitchen2":
+		return "MUSIC:S キッチン百景②"
+	elif value == "road1":
+		return "MUSIC:S ON THE ROAD①"
+
+def getBs8Description(value):
+	if value == "jewel":
+		return "世界から良質なダイヤモンドとカラーストーンを集めて、おしゃれに使えるジュエリーをお求め安い価格でご紹介いたします。"
+	elif value == "poland1":
+		return "ポーランドの平原にショパンの面影を求めて<br>〜ワルシャワからウッチまで〜"
+	elif value == "poland2":
+		return "黄金色の秋 ポーランド北部の旅<br>〜グルジョンツからソポトまで〜"
+	elif value == "austlia1":
+		return "オーストリア・ウィーンからバートイシュル<br>〜ハプスブルク帝国の足跡を訪ねて〜"
+	elif value == "austlia2":
+		return "オーストリア・ザルツブルクからインスブルック<br>〜オーストリアの世界遺産と塩の道を巡って〜"
+	elif value == "italia1":
+		return "街を彩る、歴史がつくったイタリア建築をめぐる<br>〜ミラノからチビタヴェッキアまで〜"
+	elif value == "italia2":
+		return "イタリアの壮大な歴史と大自然に触れる<br>〜ローマからアマルフィまで〜"
+	elif value == "oranda1":
+		return "フェルメールが愛したオランダの光<br>〜デン・ハーグからエンクハウゼン〜"
+	elif value == "oranda2":
+		return "オランダで江戸時代の日本を探す<br>〜アムステルダムからロッテルダム〜"
+	elif value == "spain1":
+		return "スペインケルト文化が残る最果ての地<br>〜オレンセからリバデオまで〜"
+	elif value == "spain2":
+		return "ドン・キホーテを生んだ黄金世紀<br>〜トレドからアルマグロまで〜"
+	elif value == "aqua1":
+		return "人気の水族館に潜入し日常生活では出会うことのない海の生き物たちをたっぷりとご紹介！<br>美ら海水族館（沖縄）"
+	elif value == "aqua2":
+		return "人気の水族館に潜入し日常生活では出会うことのない海の生き物たちをたっぷりとご紹介！<br>鴨川シーワールド（千葉）"
+	elif value == "aqua3":
+		return "人気の水族館に潜入し日常生活では出会うことのない海の生き物たちをたっぷりとご紹介！<br>名古屋港水族館（愛知）"
+	elif value == "taki1":
+		return "四季折々それぞれの地域に根付いた美しい佇まいを見せている滝。そんな個性豊かな滝の中から厳選した名爆の魅力をたっぷりとお届け！<br>袋田の滝（茨城）　払沢の滝（東京）　嫗仙の滝（群馬）　夕日の滝（神奈川）　月待の滝（茨城）"
+	elif value == "taki2":
+		return "四季折々それぞれの地域に根付いた美しい佇まいを見せている滝。そんな個性豊かな滝の中から厳選した名爆の魅力をたっぷりとお届け！<br>吹割の滝（群馬）　横川の滝（茨城）　洒水の滝（神奈川）　天狗滝（東京）　綾滝（東京）"
+	elif value == "taki3":
+		return "四季折々それぞれの地域に根付いた美しい佇まいを見せている滝。そんな個性豊かな滝の中から厳選した名爆の魅力をたっぷりとお届け！<br>ギーザバンタの滝（沖縄）　爆雪の滝（広島）　濃溝の滝（千葉）　白猪の滝（愛媛）　四方木不動の滝（千葉）"
+	elif value == "island1":
+		return "日本に数多くある島々。日の出から波、森林、動物・・・そして、そこに暮らす人々の生活の様子などを悠久の歴史と大自然が息づく島の様子をお届け！<br>青島（愛媛）　猿島（神奈川）"
+	elif value == "island2":
+		return "日本に数多くある島々。日の出から波、森林、動物・・・そして、そこに暮らす人々の生活の様子などを悠久の歴史と大自然が息づく島の様子をお届け！<br>古宇利島　久高島　石垣島（沖縄）"
+	elif value == "kitchen1":
+		return "作っている所を見るだけで食欲を誘う魅力的なグルメをたっぷりと目で見て味わう<br>ピッツァ（ピッツェリア　チーロ東中野店）回転寿司（くら寿司　原宿店）キャンディ（パパブブレ中野店）"
+	elif value == "kitchen2":
+		return "作っている所を見るだけで食欲を誘う魅力的なグルメをたっぷりと目で見て味わう<br>クレープ、焼き鳥、たこ焼き、うなぎ"
+	elif value == "road1":
+		return "バイクに乗って日本各地の魅力的な景色や夜景、迫力たっぷりなコースをお届け！ツーリング気分で気分爽快！<br>しまなみ海道　成田モトクロスパーク　首都高速"
+
+

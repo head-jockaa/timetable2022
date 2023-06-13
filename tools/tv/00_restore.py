@@ -581,6 +581,7 @@ def load_hash_array(filename):
 	HASH_VALUE_HASH_VALUE_COMMA = 13
 	ARRAY = 14
 	ARRAY_VALUE = 15
+	ARRAY_VALUE_ESCAPE = 24
 	ARRAY_COMMA = 16
 	ARRAY_TUPLE1 = 17
 	ARRAY_TUPLE1_VALUE = 18
@@ -614,11 +615,17 @@ def load_hash_array(filename):
 				mode = ARRAY_VALUE
 				s = ""
 		elif mode == ARRAY_VALUE:
-			if a == "\"":
+			if a == "\\":
+				mode = ARRAY_VALUE_ESCAPE
+				s += a
+			elif a == "\"":
 				mode = ARRAY_COMMA
 				result.append(s)
 			else:
 				s += a
+		elif mode == ARRAY_VALUE_ESCAPE:
+			s += a
+			mode = ARRAY_VALUE
 		elif mode == ARRAY_COMMA:
 			if a == ",":
 				mode = ARRAY
@@ -764,10 +771,16 @@ def decode_string(str):
 	is_backslash = False
 	code = 0
 	for c in str:
-		if is_backslash and c == 'n':
-			result += "<br>"
+		if is_backslash:
 			is_backslash = False
-			continue
+			if c == 'n':
+				result += "<br>"
+				continue
+			elif c == '"':
+				result += '"'
+				continue
+			else:
+				result += '\\'
 		if c == '\\':
 			is_backslash = True
 			continue
@@ -812,6 +825,8 @@ def decompressProgramChunk(month, day, tv, chunk_string):
 		keysta = "TX"
 	elif tv == "CTC2" or tv == "CTC3":
 		keysta = "CTC"
+	elif tv == "TVK2":
+		keysta = "TVK"
 	elif tv == "GTV2":
 		keysta = "GTV"
 	elif tv == "MTV2":
@@ -832,6 +847,8 @@ def decompressProgramChunk(month, day, tv, chunk_string):
 		keysta = "BS7"
 	elif tv == "FK8" or tv == "BF2":
 		keysta = "BS8"
+	elif tv == "OU2":
+		keysta = "OU1"
 
 	keystas_table = []
 	keysta_string = ""
@@ -1093,6 +1110,7 @@ def output_html(year, month, day, area, stations):
 
 	today_string = str((int)(month)) + "月 " + str((int)(day)) + "日"
 	outfile.write('<html><head><meta charset="utf-8" /><title>' + today_string + '</title></head><body>\n')
+
 	for station in stations:
 		if not station in timetables[month][day]:
 			continue
@@ -1102,7 +1120,7 @@ def output_html(year, month, day, area, stations):
 		outputBrank = False
 		for chunk in timetables[month][day][station]:
 
-			if station in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29"):
+			if station in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2","OU2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29"):
 				keysta = util.get_my_key_station(station)
 				if chunk in timetables[month][day][keysta]:
 					if not outputBrank:
@@ -1179,6 +1197,62 @@ def output_html(year, month, day, area, stations):
 	outfile.close()
 
 
+
+def output_html_gtv(year, month, day):
+	if not "GTV2" in timetables[month][day]:
+		return
+
+	dir_path = "restore" + year + "/" + month + "/" + day
+	if not os.path.isdir(dir_path):
+		os.makedirs(dir_path)
+	file_path = dir_path + "/" + year + "_" + month + "_" + day + "_GTV.html"
+	outfile = open(file_path, "w")
+
+	today_string = str(year) + "年" + str((int)(month)) + "月" + str((int)(day)) + "日"
+	outfile.write('<html><head><meta charset="utf-8" /></head><body><option value="today">' + today_string + '</option><div id ="today" class="today">\n')
+
+	idx = 0
+	for chunk in timetables[month][day]["GTV2"]:
+		if "GTV" in timetables[month][day] and chunk in timetables[month][day]["GTV"]:
+			idx+=1
+			continue
+
+		hour = str(base60.index(chunk[0]))
+		if len(hour) == 1:
+			hour = "0" + str(hour)
+		minute = str(base60.index(chunk[1]))
+		if len(minute) == 1:
+			minute = "0" + str(minute)
+
+		category, types, title_id, chapter_id, desc_id, interval, splited_by_space = read_chunk(chunk)
+
+		if interval == 0:
+			a = util.time_decode_base60( timetables[month][day]["GTV2"][idx][:2] )
+			b = util.time_decode_base60( timetables[month][day]["GTV2"][idx+1][:2] )
+			interval = util.get_interval(a,b)
+
+		types_string = ""
+		for t in types:
+			types_string += "[" + t + "]"
+
+		full_title = decode_string(titles[title_id][0])
+		if splited_by_space:
+			full_title += " "
+		if chapter_id != None:
+			full_title += decode_string(titles[title_id][1][chapter_id])
+
+		if full_title == "この時間は031chをご覧ください。":
+			idx+=1
+			continue;
+
+		outfile.write('<dl class="h' + hour + ' m' + minute + ' t' + str(interval) + '">\n')
+		outfile.write('<dt>' + hour + ':' + minute + '</dt>\n')
+		outfile.write('<dd><p class="title">' + full_title + types_string + '</p></dd>\n')
+		outfile.write('</dl>\n')
+		idx+=1
+
+	outfile.write('</div></body></html>\n')
+	outfile.close()
 
 def output_html_mietv(year, month, day):
 	if not "MTV2" in timetables[month][day]:
@@ -1305,7 +1379,7 @@ def output_html_suntv(year, month, day):
 	outfile.write('</body></html>\n')
 	outfile.close()
 
-def output_html_bs8_gtv2(year, month, day):
+def output_html_bs8_tvk2(year, month, day):
 	dir_path = "restore" + year + "/" + month + "/" + day
 	if not os.path.isdir(dir_path):
 		os.makedirs(dir_path)
@@ -1345,16 +1419,23 @@ def output_html_bs8_gtv2(year, month, day):
 			interval = str(util.get_interval(a,b))
 
 		outfile.write('add ' + hour + minute + '\n')
-		outfile.write('interval ' + interval + '\n')
-		outfile.write('code ' + category + '\n')
-		outfile.write('title ' + full_title + types_string + '\n')
-		outfile.write('desc ' + decode_string(descriptions[desc_id]) + '\n\n')
+
+		bs8title = output_bs8title(full_title)
+		if bs8title != None:
+			outfile.write('bs8title ' + bs8title + '\n')
+			if interval != "30":
+				outfile.write('interval ' + interval + '\n')
+		else:
+			outfile.write('interval ' + interval + '\n')
+			outfile.write('code ' + category + '\n')
+			outfile.write('title ' + full_title + types_string + '\n')
+			outfile.write('desc ' + decode_string(descriptions[desc_id]) + '\n\n')
 		idx += 1
 
-	outfile.write('> GTV2\n')
+	outfile.write('> TVK2\n')
 	idx = 0
-	for chunk in timetables[month][day]["GTV2"]:
-		if "GTV" in timetables[month][day] and chunk in timetables[month][day]["GTV"]:
+	for chunk in timetables[month][day]["TVK2"]:
+		if "TVK" in timetables[month][day] and chunk in timetables[month][day]["TVK"]:
 			idx += 1
 			continue
 		hour = str(base60.index(chunk[0]))
@@ -1379,8 +1460,8 @@ def output_html_bs8_gtv2(year, month, day):
 		if ":" in chunk:
 			interval = chunk.split(":")[1]
 		else:
-			a = util.time_decode_base60( timetables[month][day]["GTV2"][idx][:2] )
-			b = util.time_decode_base60( timetables[month][day]["GTV2"][idx+1][:2] )
+			a = util.time_decode_base60( timetables[month][day]["TVK2"][idx][:2] )
+			b = util.time_decode_base60( timetables[month][day]["TVK2"][idx+1][:2] )
 			interval = str(util.get_interval(a,b))
 
 		outfile.write('add ' + hour + minute + '\n')
@@ -1390,7 +1471,77 @@ def output_html_bs8_gtv2(year, month, day):
 		outfile.write('desc ' + decode_string(descriptions[desc_id]) + '\n\n')
 		idx += 1
 
+	outfile.write('> GTV2\n')
+	idx = 0
+	for chunk in timetables[month][day]["GTV2"]:
+		if "GTV" in timetables[month][day] and chunk in timetables[month][day]["GTV"]:
+			idx += 1
+			continue
+		hour = str(base60.index(chunk[0]))
+		if len(hour) == 1:
+			hour = "0" + str(hour)
+		minute = str(base60.index(chunk[1]))
+		if len(minute) == 1:
+			minute = "0" + str(minute)
+
+		category, types, title_id, chapter_id, desc_id, interval, splited_by_space = read_chunk(chunk)
+
+		title = decode_string(titles[title_id][0])
+		if title in ["このあとプレミアム放送開始", "お天気情報", "ライブビュー&ミュージック", "読売デジタルニュース", "この時間は031chをご覧ください。"]:
+			continue
+
+		outfile.write('modify ' + hour + minute + '\n')
+		outfile.write('code ' + category + '\n')
+		outfile.write('desc ' + decode_string(descriptions[desc_id]) + '\n\n')
+		idx += 1
+
 	outfile.close()
+
+def output_bs8title(title):
+	if title == "ジュエリーライフNEXT":
+		return "jewel"
+	elif title == "MUSIC:S 欧州鉄道の旅・ポーランド①":
+		return "poland1"
+	elif title == "MUSIC:S 欧州鉄道の旅・ポーランド②":
+		return "poland2"
+	elif title == "MUSIC:S 欧州鉄道の旅・オーストリア①":
+		return "austlia1"
+	elif title == "MUSIC:S 欧州鉄道の旅・オーストリア②":
+		return "austlia2"
+	elif title == "MUSIC:S 欧州鉄道の旅・イタリア①":
+		return "italia1"
+	elif title == "MUSIC:S 欧州鉄道の旅・イタリア②":
+		return "italia2"
+	elif title == "MUSIC:S 欧州鉄道の旅・オランダ①":
+		return "oranda1"
+	elif title == "MUSIC:S 欧州鉄道の旅・スペイン①":
+		return "spain1"
+	elif title == "MUSIC:S 欧州鉄道の旅・スペイン②":
+		return "spain2"
+	elif title == "MUSIC:S 体感！魅惑のアクアリウム①":
+		return "aqua1"
+	elif title == "MUSIC:S 体感！魅惑のアクアリウム②":
+		return "aqua2"
+	elif title == "MUSIC:S 体感！魅惑のアクアリウム③":
+		return "aqua3"
+	elif title == "MUSIC:S にっぽん名滝探訪①":
+		return "taki1"
+	elif title == "MUSIC:S にっぽん名滝探訪②":
+		return "taki2"
+	elif title == "MUSIC:S にっぽん名滝探訪③":
+		return "taki3"
+	elif title == "MUSIC:S グレートアイランド 悠久の時を生きる①":
+		return "island1"
+	elif title == "MUSIC:S グレートアイランド 悠久の時を生きる②":
+		return "island2"
+	elif title == "MUSIC:S キッチン百景①":
+		return "kitchen1"
+	elif title == "MUSIC:S キッチン百景②":
+		return "kitchen2"
+	elif title == "MUSIC:S ON THE ROAD①":
+		return "road1"
+	else:
+		return None
 
 def output_html_nhk(year, month, day, nhk_area):
 	area = nhk.convertToTvkingdomArea(nhk_area)
@@ -1405,73 +1556,101 @@ def output_html_nhk(year, month, day, nhk_area):
 
 	chunks = []
 	for i in [0,2,4,6,7,8,9,10,11]:
-		chunks.append({"column":i, "top":0, "height":1600, "chunk":""})
+		chunks.append({"column":i, "top":255, "height":1545, "chunk":""})
 	if not "sG"+area in timetables[month][day]:
-		chunks.append({"column":1, "top":0, "height":1600, "chunk":""})
+		chunks.append({"column":1, "top":255, "height":1545, "chunk":""})
 	if not "sE"+area in timetables[month][day]:
-		chunks.append({"column":3, "top":0, "height":1600, "chunk":""})
+		chunks.append({"column":3, "top":255, "height":1545, "chunk":""})
 	if not "NB2" in timetables[month][day]:
-		chunks.append({"column":5, "top":0, "height":1600, "chunk":""})
+		chunks.append({"column":5, "top":255, "height":1545, "chunk":""})
 
 	idx = 0
-	height = 0
+	height = 255
 	if "sG"+area in timetables[month][day]:
 		for c in timetables[month][day]["sG"+area]:
-			if c not in timetables[month][day]["G"+area]:
+			idx2 = 0
+			ok = True
+			for c2 in timetables[month][day]["G"+area]:
+				if c == c2:
+					ok = False
+					if idx2 == len(timetables[month][day]["G"+area])-1:
+						break
+					nexttime1 = util.time_decode_base60(timetables[month][day]["sG"+area][idx+1])
+					nexttime2 = util.time_decode_base60(timetables[month][day]["G"+area][idx2+1])
+					if nexttime1 != nexttime2:
+						ok = True
+						break
+				idx2+=1
+			if ok:
 				splited = c.split(":")
 				if len(splited) == 1:
-					interval = util.get_interval(util.time_decode_base60(timetables[month][day]["sG"+area][idx]), util.time_decode_base60(timetables[month][day]["sG"+area][idx+1]))
+					thistime = util.time_decode_base60(timetables[month][day]["sG"+area][idx])
+					nexttime = util.time_decode_base60(timetables[month][day]["sG"+area][idx+1])
+					if thistime < "0415":
+						interval = util.get_interval("0415", nexttime)
+					else:
+						interval = util.get_interval(thistime, nexttime)
 				else:
 					interval = (int)(splited[1])
 				h_m = (int)(util.time_decode_base60(c))
-				minute = math.floor(h_m/100)*60+(h_m%100) -255
-				if minute-height != 0:
+				minute = math.floor(h_m/100)*60+(h_m%100)
+				if minute-height > 0:
 					chunks.append({"column":1, "top":height, "height":minute-height, "chunk":""})
 					height += minute-height
 				chunks.append({"column":1, "top":height, "height":interval, "chunk":c})
 				height += interval
 			idx += 1
-		chunks.append({"column":1, "top":height, "height":1600-height, "chunk":""})
+		chunks.append({"column":1, "top":height, "height":60*30-height, "chunk":""})
 
 	idx = 0
-	height = 0
+	height = 255
 	if "sE"+area in timetables[month][day]:
 		for c in timetables[month][day]["sE"+area]:
 			if c not in timetables[month][day]["E"+area]:
 				splited = c.split(":")
 				if len(splited) == 1:
-					interval = util.get_interval(util.time_decode_base60(timetables[month][day]["sE"+area][idx]), util.time_decode_base60(timetables[month][day]["sE"+area][idx+1]))
+					thistime = util.time_decode_base60(timetables[month][day]["sE"+area][idx])
+					nexttime = util.time_decode_base60(timetables[month][day]["sE"+area][idx+1])
+					if thistime < "0415":
+						interval = util.get_interval("0415", nexttime)
+					else:
+						interval = util.get_interval(thistime, nexttime)
 				else:
 					interval = (int)(splited[1])
 				h_m = (int)(util.time_decode_base60(c))
-				minute = math.floor(h_m/100)*60+(h_m%100) -255
-				if minute-height != 0:
+				minute = math.floor(h_m/100)*60+(h_m%100)
+				if minute-height > 0:
 					chunks.append({"column":3, "top":height, "height":minute-height, "chunk":""})
 					height += minute-height
 				chunks.append({"column":3, "top":height, "height":interval, "chunk":c})
 				height += interval
 			idx += 1
-		chunks.append({"column":3, "top":height, "height":1600-height, "chunk":""})
+		chunks.append({"column":3, "top":height, "height":60*30-height, "chunk":""})
 
 	idx = 0
-	height = 0
+	height = 255
 	if "NB2" in timetables[month][day]:
 		for c in timetables[month][day]["NB2"]:
 			if c not in timetables[month][day]["BS1"]:
 				splited = c.split(":")
 				if len(splited) == 1:
-					interval = util.get_interval(util.time_decode_base60(timetables[month][day]["NB2"][idx]), util.time_decode_base60(timetables[month][day]["NB2"][idx+1]))
+					thistime = util.time_decode_base60(timetables[month][day]["NB2"][idx])
+					nexttime = util.time_decode_base60(timetables[month][day]["NB2"][idx+1])
+					if thistime < "0415":
+						interval = util.get_interval("0415", nexttime)
+					else:
+						interval = util.get_interval(thistime, nexttime)
 				else:
 					interval = (int)(splited[1])
 				h_m = (int)(util.time_decode_base60(c))
-				minute = math.floor(h_m/100)*60+(h_m%100) -255
-				if minute-height != 0:
+				minute = math.floor(h_m/100)*60+(h_m%100)
+				if minute-height > 0:
 					chunks.append({"column":5, "top":height, "height":minute-height, "chunk":""})
 					height += minute-height
 				chunks.append({"column":5, "top":height, "height":interval, "chunk":c})
 				height += interval
 			idx += 1
-		chunks.append({"column":5, "top":height, "height":1600-height, "chunk":""})
+		chunks.append({"column":5, "top":height, "height":60*30-height, "chunk":""})
 
 	chunks_sorted = sorted(chunks, key=lambda x:(x["top"],x["column"]))
 
@@ -1536,6 +1715,9 @@ def output_html_bs4(days):
 	hit_one = False
 	idx = 0
 	for d in days:
+		if d == None:
+			idx+=1
+			continue
 		if d.month < 10:
 			month = "0" + str(d.month)
 		else:
@@ -1547,11 +1729,19 @@ def output_html_bs4(days):
 		if month in timetables and day in timetables[month] and "BN2" in timetables[month][day] and timetables[month][day]["BN2"][0] != "":
 			hit[idx] = True
 			hit_one = True
+			file_day = d
 		idx += 1
 	if not hit_one:
 		return
 
-	file_path = "restore" + year + "/" + month + "/" + year + "_" + str(days[0].isocalendar()[1]) + "week_bs141.html"
+	if file_day.month < 10:
+		file_day_month = "0" + str(file_day.month)
+	else:
+		file_day_month = str(file_day.month)
+	dir_path = "restore" + util.year + "/" + file_day_month
+	file_path = dir_path + "/" + util.year + "_" + str(file_day.isocalendar()[1]) + "week_bs141.html"
+	if not os.path.isdir(dir_path):
+		os.makedirs(dir_path)
 	outfile = open(file_path, "w")
 	outfile.write('<html><head><meta charset="utf-8" /></head><body>\n')
 	outfile.write('</body></html>\n')
@@ -1565,33 +1755,40 @@ def output_html_bs4(days):
 			chunks.append({"column":i, "top":0, "height":60*30, "chunk":""})
 
 	for d in range(7):
+		if not hit[d]:
+			continue
+
+		if days[d].month < 10:
+			month = "0" + str(days[d].month)
+		else:
+			month = str(days[d].month)
 		if days[d].day < 10:
 			day = "0" + str(days[d].day)
 		else:
 			day = str(days[d].day)
 		idx = 0
 		height = 0
-		if hit[d]:
-			for c in timetables[month][day]["BN2"]:
-				if c not in timetables[month][day]["BS4"]:
-					splited = c.split(":")
-					if len(splited) == 1:
-						interval = util.get_interval(util.time_decode_base60(timetables[month][day]["BN2"][idx]), util.time_decode_base60(timetables[month][day]["BN2"][idx+1]))
-					else:
-						interval = (int)(splited[1])
-					h_m = (int)(util.time_decode_base60(c))
-					minute = math.floor(h_m/100)*60+(h_m%100)
-					if minute-height != 0:
-						chunks.append({"column":d+1, "top":height, "height":minute-height, "chunk":""})
-						height += minute-height
-					chunks.append({"column":d+1, "top":height, "height":interval, "chunk":c})
-					height += interval
-				idx += 1
-			chunks.append({"column":d+1, "top":height, "height":60*30-height, "chunk":""})
+
+		for c in timetables[month][day]["BN2"]:
+			if c not in timetables[month][day]["BS4"]:
+				splited = c.split(":")
+				if len(splited) == 1:
+					interval = util.get_interval(util.time_decode_base60(timetables[month][day]["BN2"][idx]), util.time_decode_base60(timetables[month][day]["BN2"][idx+1]))
+				else:
+					interval = (int)(splited[1])
+				h_m = (int)(util.time_decode_base60(c))
+				minute = math.floor(h_m/100)*60+(h_m%100)
+				if minute-height != 0:
+					chunks.append({"column":d+1, "top":height, "height":minute-height, "chunk":""})
+					height += minute-height
+				chunks.append({"column":d+1, "top":height, "height":interval, "chunk":c})
+				height += interval
+			idx += 1
+		chunks.append({"column":d+1, "top":height, "height":60*30-height, "chunk":""})
 
 	chunks_sorted = sorted(chunks, key=lambda x:(x["top"],x["column"]))
 
-	file_path = "restore" + year + "/" + month + "/" + year + "_" + str(days[0].isocalendar()[1]) + "week_bs142.html"
+	file_path = dir_path + "/" + util.year + "_" + str(file_day.isocalendar()[1]) + "week_bs142.html"
 	outfile = open(file_path, "w")
 	outfile.write('<html><head><meta charset="utf-8" /></head><body>\n')
 
@@ -1650,7 +1847,6 @@ if __name__ == "__main__":
 	global timetables, original_timetables, station_names, decoder
 	global decoder1_range, decoder2_range, decoder3_range
 
-	year = "2022"
 	abc_list = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x"]
 	base60 = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x"]
 
@@ -1675,87 +1871,88 @@ if __name__ == "__main__":
 
 	for month in timetables:
 		for day in timetables[month]:
-			output_html(year, month, day, "10", ["HBC","E10","G10","STV","HTB","TVH","UHB"])
-			output_html(year, month, day, "11", ["HBC","E11","G11","STV","HTB","TVH","UHB"])
-			output_html(year, month, day, "12", ["HBC","E12","G12","STV","HTB","TVH","UHB"])
-			output_html(year, month, day, "13", ["HBC","E13","G13","STV","HTB","TVH","UHB"])
-			output_html(year, month, day, "14", ["HBC","E14","G14","STV","HTB","TVH","UHB"])
-			output_html(year, month, day, "15", ["HBC","E15","G15","STV","HTB","TVH","UHB"])
-			output_html(year, month, day, "16", ["HBC","E16","G16","STV","HTB","TVH","UHB"])
-			output_html(year, month, day, "22", ["RAB","E22","G22","ABA","ATV"])
-			output_html(year, month, day, "20", ["G20","E20","TVI","IAT","IBC","MIT"])
-			output_html(year, month, day, "17", ["TBC","E17","G17","MMT","KHB","OX"])
-			output_html(year, month, day, "18", ["G18","E18","ABS","AAB","AKT"])
-			output_html(year, month, day, "18_ABS2", ["ABS2"])
-			output_html(year, month, day, "19", ["G19","E19","YBC","YTS","TUY","SAY"])
-			output_html(year, month, day, "21", ["G21","E21","FCT","KFB","TUF","FTV"])
-			output_html(year, month, day, "26", ["G26","E23","NTV","EX","TBS","TX","CX","G23"])
-			output_html(year, month, day, "28", ["G28","E23","TTV","NTV","TBS","CX","EX","TX","G28"])
-			output_html(year, month, day, "25", ["G25","E23","GTV","NTV","TBS","CX","EX","TX","G25"])
-			output_html(year, month, day, "29", ["G23","E23","TVS","NTV","EX","TBS","TX","CX"])
-			output_html(year, month, day, "27", ["G23","E23","CTC","NTV","EX","TBS","TX","CX"])
-			output_html(year, month, day, "23", ["G23","E23","NTV","EX","TBS","TX","CX","MX"])
-			output_html(year, month, day, "24", ["G23","E23","TVK","NTV","EX","TBS","TX","CX"])
-			output_html(year, month, day, "31", ["G31","E31","TENY","UX","BSN","NST"])
-			output_html(year, month, day, "32", ["G32","E32","YBS","UTY"])
-			output_html(year, month, day, "30", ["G30","E30","TSB","ABN","SBC","NBS"])
-			output_html(year, month, day, "37", ["KNB","E37","G37","TUT","BBT"])
-			output_html(year, month, day, "34", ["G34","E34","KTK","HAB","MRO","ITC"])
-			output_html(year, month, day, "36", ["G36","E36","FBC","FTB"])
-			output_html(year, month, day, "39", ["THK","E33","G39","CTV","CBC","NBN","GBS"])
-			output_html(year, month, day, "35", ["G35","E35","SDT","SATV","SBS","SUT"])
-			output_html(year, month, day, "33", ["THK","E33","G33","CTV","CBC","NBN","TVA"])
-			output_html(year, month, day, "38", ["THK","E33","G38","CTV","CBC","NBN","MTV"])
-			output_html(year, month, day, "45", ["G45","E40","BBC","MBS","ABC","KTV","YTV"])
-			output_html(year, month, day, "41", ["G41","E40","MBS","KBS","ABC","KTV","YTV"])
-			output_html(year, month, day, "40", ["G40","E40","MBS","ABC","TVO","KTV","YTV"])
-			output_html(year, month, day, "42", ["G42","E40","SUN","MBS","ABC","KTV","YTV"])
-			output_html(year, month, day, "44", ["G44","E40","MBS","ABC","KTV","TVN","YTV"])
-			output_html(year, month, day, "43", ["G43","E40","MBS","WTV","ABC","KTV","YTV"])
-			output_html(year, month, day, "49", ["NKT","E49","G49","BSS","TSK"])
-			output_html(year, month, day, "48", ["NKT","E48","G48","BSS","TSK"])
-			output_html(year, month, day, "48_TSK2", ["TSK2"])
-			output_html(year, month, day, "47", ["G47","E47","RNC","KSB","RSK","TSC","OHK"])
-			output_html(year, month, day, "46", ["G46","E46","RCC","HTV","HOME","TSS"])
-			output_html(year, month, day, "50", ["G50","E50","TYS","KRY","YAB"])
-			output_html(year, month, day, "53", ["JRT","E53","G53"])
-			output_html(year, month, day, "52", ["G52","E52","RNC","KSB","RSK","TSC","OHK"])
-			output_html(year, month, day, "51", ["G51","E51","RNB","EAT","ITV","EBC"])
-			output_html(year, month, day, "54", ["G54","E54","RKC","KUTV","KSS"])
-			output_html(year, month, day, "55", ["KBC","E55","G55","RKB","FBS","TVQ","TNC","Ekk","Gkk"])
-			output_html(year, month, day, "61", ["G61","E61","STS"])
-			output_html(year, month, day, "57", ["G57","E57","NBC","NIB","NCC","KTN"])
-			output_html(year, month, day, "56", ["G56","E56","RKK","KKT","KAB","TKU"])
-			output_html(year, month, day, "60", ["G60","E60","OBS","TOS","OAB"])
-			output_html(year, month, day, "59", ["G59","E59","UMK","MRT"])
-			output_html(year, month, day, "58", ["MBC","E58","G58","KYT","KKB","KTS"])
-			output_html(year, month, day, "53_KYT3", ["KYT3"])
-			output_html(year, month, day, "62", ["G62","E62","RBC","QAB","OTV"])
-			output_html(year, month, day, "bs1", ["BS1","BSp","BS4","BS5","BS6","BS7","BS8"])
-			output_html(year, month, day, "bs2", ["WW1","WW2","WW3","SC1","SC2","SC3","BS11","BS12","OU1"])
-			output_html(year, month, day, "bs1_TX", ["BT2"])
-			output_html(year, month, day, "bs2_ON", ["OU2"])
-			output_html(year, month, day, "bs3", ["GCH","BSA","SKY","JS1","JS2","JS3","JS4"])
-			output_html(year, month, day, "bs4", ["BSF","WW4","JMV","DCH","BST","BSJ","BSY"])
-			output_html(year, month, day, "bs4k8k_1", ["FK1","FK4","FK5","FK6","FK7","FK8"])
-			output_html(year, month, day, "bs4k8k_2", ["EK1","FKW","FKC","FKS","QVC"])
-			output_html(year, month, day, "23_EX2", ["EX2"])
-			output_html(year, month, day, "23_MX2", ["MX2"])
-			output_html(year, month, day, "27_CTC2", ["CTC2"])
-			output_html(year, month, day, "27_CTC3", ["CTC3"])
-			output_html_mietv(year, month, day)
-			output_html_suntv(year, month, day)
-			output_html_bs8_gtv2(year, month, day)
+			output_html(util.year, month, day, "10", ["HBC","E10","G10","STV","HTB","TVH","UHB"])
+			output_html(util.year, month, day, "11", ["HBC","E11","G11","STV","HTB","TVH","UHB"])
+			output_html(util.year, month, day, "12", ["HBC","E12","G12","STV","HTB","TVH","UHB"])
+			output_html(util.year, month, day, "13", ["HBC","E13","G13","STV","HTB","TVH","UHB"])
+			output_html(util.year, month, day, "14", ["HBC","E14","G14","STV","HTB","TVH","UHB"])
+			output_html(util.year, month, day, "15", ["HBC","E15","G15","STV","HTB","TVH","UHB"])
+			output_html(util.year, month, day, "16", ["HBC","E16","G16","STV","HTB","TVH","UHB"])
+			output_html(util.year, month, day, "22", ["RAB","E22","G22","ABA","ATV"])
+			output_html(util.year, month, day, "20", ["G20","E20","TVI","IAT","IBC","MIT"])
+			output_html(util.year, month, day, "17", ["TBC","E17","G17","MMT","KHB","OX"])
+			output_html(util.year, month, day, "18", ["G18","E18","ABS","AAB","AKT"])
+			output_html(util.year, month, day, "18_ABS2", ["ABS2"])
+			output_html(util.year, month, day, "19", ["G19","E19","YBC","YTS","TUY","SAY"])
+			output_html(util.year, month, day, "21", ["G21","E21","FCT","KFB","TUF","FTV"])
+			output_html(util.year, month, day, "26", ["G26","E23","NTV","EX","TBS","TX","CX","G23"])
+			output_html(util.year, month, day, "28", ["G28","E23","TTV","NTV","TBS","CX","EX","TX","G28"])
+			output_html(util.year, month, day, "25", ["G25","E23","GTV","NTV","TBS","CX","EX","TX","G25"])
+			output_html(util.year, month, day, "29", ["G23","E23","TVS","NTV","EX","TBS","TX","CX"])
+			output_html(util.year, month, day, "27", ["G23","E23","CTC","NTV","EX","TBS","TX","CX"])
+			output_html(util.year, month, day, "23", ["G23","E23","NTV","EX","TBS","TX","CX","MX"])
+			output_html(util.year, month, day, "24", ["G23","E23","TVK","NTV","EX","TBS","TX","CX"])
+			output_html(util.year, month, day, "31", ["G31","E31","TENY","UX","BSN","NST"])
+			output_html(util.year, month, day, "32", ["G32","E32","YBS","UTY"])
+			output_html(util.year, month, day, "30", ["G30","E30","TSB","ABN","SBC","NBS"])
+			output_html(util.year, month, day, "37", ["KNB","E37","G37","TUT","BBT"])
+			output_html(util.year, month, day, "34", ["G34","E34","KTK","HAB","MRO","ITC"])
+			output_html(util.year, month, day, "36", ["G36","E36","FBC","FTB"])
+			output_html(util.year, month, day, "39", ["THK","E33","G39","CTV","CBC","NBN","GBS"])
+			output_html(util.year, month, day, "35", ["G35","E35","SDT","SATV","SBS","SUT"])
+			output_html(util.year, month, day, "33", ["THK","E33","G33","CTV","CBC","NBN","TVA"])
+			output_html(util.year, month, day, "38", ["THK","E33","G38","CTV","CBC","NBN","MTV"])
+			output_html(util.year, month, day, "45", ["G45","E40","BBC","MBS","ABC","KTV","YTV"])
+			output_html(util.year, month, day, "41", ["G41","E40","MBS","KBS","ABC","KTV","YTV"])
+			output_html(util.year, month, day, "40", ["G40","E40","MBS","ABC","TVO","KTV","YTV"])
+			output_html(util.year, month, day, "42", ["G42","E40","SUN","MBS","ABC","KTV","YTV"])
+			output_html(util.year, month, day, "44", ["G44","E40","MBS","ABC","KTV","TVN","YTV"])
+			output_html(util.year, month, day, "43", ["G43","E40","MBS","WTV","ABC","KTV","YTV"])
+			output_html(util.year, month, day, "49", ["NKT","E49","G49","BSS","TSK"])
+			output_html(util.year, month, day, "48", ["NKT","E48","G48","BSS","TSK"])
+			output_html(util.year, month, day, "48_TSK2", ["TSK2"])
+			output_html(util.year, month, day, "47", ["G47","E47","RNC","KSB","RSK","TSC","OHK"])
+			output_html(util.year, month, day, "46", ["G46","E46","RCC","HTV","HOME","TSS"])
+			output_html(util.year, month, day, "50", ["G50","E50","TYS","KRY","YAB"])
+			output_html(util.year, month, day, "53", ["JRT","E53","G53"])
+			output_html(util.year, month, day, "52", ["G52","E52","RNC","KSB","RSK","TSC","OHK"])
+			output_html(util.year, month, day, "51", ["G51","E51","RNB","EAT","ITV","EBC"])
+			output_html(util.year, month, day, "54", ["G54","E54","RKC","KUTV","KSS"])
+			output_html(util.year, month, day, "55", ["KBC","E55","G55","RKB","FBS","TVQ","TNC","Ekk","Gkk"])
+			output_html(util.year, month, day, "61", ["G61","E61","STS"])
+			output_html(util.year, month, day, "57", ["G57","E57","NBC","NIB","NCC","KTN"])
+			output_html(util.year, month, day, "56", ["G56","E56","RKK","KKT","KAB","TKU"])
+			output_html(util.year, month, day, "60", ["G60","E60","OBS","TOS","OAB"])
+			output_html(util.year, month, day, "59", ["G59","E59","UMK","MRT"])
+			output_html(util.year, month, day, "58", ["MBC","E58","G58","KYT","KKB","KTS"])
+			output_html(util.year, month, day, "58_KYT3", ["KYT3"])
+			output_html(util.year, month, day, "62", ["G62","E62","RBC","QAB","OTV"])
+			output_html(util.year, month, day, "bs1", ["BS1","BSp","BS4","BS5","BS6","BS7","BS8"])
+			output_html(util.year, month, day, "bs2", ["WW1","WW2","WW3","SC1","SC2","SC3","BS11","BS12","OU1"])
+			output_html(util.year, month, day, "bs1_TX", ["BT2"])
+			output_html(util.year, month, day, "bs2_ON", ["OU2"])
+			output_html(util.year, month, day, "bs3", ["GCH","BSA","SKY","JS1","JS2","JS3","JS4"])
+			output_html(util.year, month, day, "bs4", ["BSF","WW4","JMV","DCH","BST","BSJ","BSY"])
+			output_html(util.year, month, day, "bs4k8k_1", ["FK1","FK4","FK5","FK6","FK7","FK8"])
+			output_html(util.year, month, day, "bs4k8k_2", ["EK1","FKW","FKC","FKS","QVC"])
+			output_html(util.year, month, day, "23_EX2", ["EX2"])
+			output_html(util.year, month, day, "23_MX2", ["MX2"])
+			output_html(util.year, month, day, "27_CTC2", ["CTC2"])
+			output_html(util.year, month, day, "27_CTC3", ["CTC3"])
+			output_html_gtv(util.year, month, day)
+			output_html_mietv(util.year, month, day)
+			output_html_suntv(util.year, month, day)
+			output_html_bs8_tvk2(util.year, month, day)
 			for nhk_area in nhk.nhk_areas:
-				output_html_nhk(year, month, day, nhk_area)
-			print(year+"-"+month+"-"+day)
+				output_html_nhk(util.year, month, day, nhk_area)
+			print(util.year+"-"+month+"-"+day)
 
 
-	d = datetime.date(2022, 1, 1)
+	d = datetime.date((int)(util.year), 1, 1)
 	days = []
 	for i in range(d.weekday()):
-		days.append(datetime.date(2021, 12, 31))
-	while d != datetime.date(2023, 1, 1):
+		days.append(None)
+	while d != datetime.date((int)(util.year)+1, 1, 1):
 		days.append(d)
 		if d.weekday() == 6:
 			output_html_bs4(days)

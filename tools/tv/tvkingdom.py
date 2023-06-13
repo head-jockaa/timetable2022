@@ -365,4 +365,4 @@ def extractIconsFromTitle(title_string):
 		types.append(util.append_type_name("HDR"))
 		title_string = title_string.replace("[HDR]","")
 
-	return types, title_string.strip()
+	return types, title_string.replace("  "," ").strip()

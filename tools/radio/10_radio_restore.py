@@ -696,17 +696,22 @@ def output_html_nhk(year, month, day, area):
 		chunks.append({"column":2, "top":0, "height":60*30, "chunk":""})
 
 	idx = 0
-	height = 0
+	height = 255
 	if "NHK1_"+area in timetables[month][day]:
 		for c in timetables[month][day]["NHK1_"+area]:
 			splited = c.split(":")
 			if len(splited) == 1:
-				interval = radio_util.get_interval(radio_util.time_decode_base60(timetables[month][day]["NHK1_"+area][idx]), radio_util.time_decode_base60(timetables[month][day]["NHK1_"+area][idx+1]))
+				thistime = radio_util.time_decode_base60(timetables[month][day]["NHK1_"+area][idx])
+				nexttime = radio_util.time_decode_base60(timetables[month][day]["NHK1_"+area][idx+1])
+				if thistime < "0415":
+					interval = radio_util.get_interval("0415", nexttime)
+				else:
+					interval = radio_util.get_interval(thistime, nexttime)
 			else:
 				interval = (int)(splited[1])
 			h_m = (int)(radio_util.time_decode_base60(c))
 			minute = math.floor(h_m/100)*60+(h_m%100)
-			if minute-height != 0:
+			if minute-height > 0:
 				chunks.append({"column":0, "top":height, "height":minute-height, "chunk":""})
 				height += minute-height
 			chunks.append({"column":0, "top":height, "height":interval, "chunk":c})
@@ -715,17 +720,22 @@ def output_html_nhk(year, month, day, area):
 		chunks.append({"column":0, "top":height, "height":60*30-height, "chunk":""})
 
 	idx = 0
-	height = 0
+	height = 255
 	if "NHKFM_"+area in timetables[month][day]:
 		for c in timetables[month][day]["NHKFM_"+area]:
 			splited = c.split(":")
 			if len(splited) == 1:
-				interval = radio_util.get_interval(radio_util.time_decode_base60(timetables[month][day]["NHKFM_"+area][idx]), radio_util.time_decode_base60(timetables[month][day]["NHKFM_"+area][idx+1]))
+				thistime = radio_util.time_decode_base60(timetables[month][day]["NHKFM_"+area][idx])
+				nexttime = radio_util.time_decode_base60(timetables[month][day]["NHKFM_"+area][idx+1])
+				if thistime < "0415":
+					interval = radio_util.get_interval("0415", nexttime)
+				else:
+					interval = radio_util.get_interval(thistime, nexttime)
 			else:
 				interval = (int)(splited[1])
 			h_m = (int)(radio_util.time_decode_base60(c))
 			minute = math.floor(h_m/100)*60+(h_m%100)
-			if minute-height != 0:
+			if minute-height > 0:
 				chunks.append({"column":2, "top":height, "height":minute-height, "chunk":""})
 				height += minute-height
 			chunks.append({"column":2, "top":height, "height":interval, "chunk":c})
@@ -734,17 +744,22 @@ def output_html_nhk(year, month, day, area):
 		chunks.append({"column":2, "top":height, "height":60*30-height, "chunk":""})
 
 	idx = 0
-	height = 0
+	height = 255
 	if "NHK2" in timetables[month][day]:
 		for c in timetables[month][day]["NHK2"]:
 			splited = c.split(":")
 			if len(splited) == 1:
-				interval = radio_util.get_interval(radio_util.time_decode_base60(timetables[month][day]["NHK2"][idx]), radio_util.time_decode_base60(timetables[month][day]["NHK2"][idx+1]))
+				thistime = radio_util.time_decode_base60(timetables[month][day]["NHK2"][idx])
+				nexttime = radio_util.time_decode_base60(timetables[month][day]["NHK2"][idx+1])
+				if thistime < "0415":
+					interval = radio_util.get_interval("0415", nexttime)
+				else:
+					interval = radio_util.get_interval(thistime, nexttime)
 			else:
 				interval = (int)(splited[1])
 			h_m = (int)(radio_util.time_decode_base60(c))
 			minute = math.floor(h_m/100)*60+(h_m%100)
-			if minute-height != 0:
+			if minute-height > 0:
 				chunks.append({"column":1, "top":height, "height":minute-height, "chunk":""})
 				height += minute-height
 			chunks.append({"column":1, "top":height, "height":interval, "chunk":c})
@@ -800,7 +815,6 @@ if __name__ == "__main__":
 	global timetables, original_timetables, station_names, decoder
 	global decoder1_range, decoder2_range, decoder3_range
 
-	year = "2022"
 	abc_list = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x"]
 	base60 = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x"]
 
@@ -825,8 +839,8 @@ if __name__ == "__main__":
 
 	for month in timetables:
 		for day in timetables[month]:
-			print(year+"-"+month+"-"+day)
+			print(radio_util.year+"-"+month+"-"+day)
 			for nhk_area in radio_util.nhk_areas:
-				output_html_nhk(year, month, day, nhk_area)
+				output_html_nhk(radio_util.year, month, day, nhk_area)
 			for station in radio_util.stations:
-				output_html(year, month, day, station)
+				output_html(radio_util.year, month, day, station)

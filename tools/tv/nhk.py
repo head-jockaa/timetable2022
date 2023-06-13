@@ -285,6 +285,8 @@ def getCategoryCode(title_name):
 		return "101110"
 	elif "体操" in title_name or "クライミング" in title_name:
 		return "101115"
+	elif title_name == "あの人の極上ハンバーグ":
+		return "102105"
 	elif "スタジオパーク" in title_name or title_name == "土スタ":
 		return "102107"
 	elif "連続テレビ小説" in title_name:

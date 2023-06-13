@@ -43,7 +43,7 @@ def reset_temporary_data():
 	tokyofm_standards = set([])
 
 def sanitize(s):
-	sanitized = s.replace("<wbr/>","").replace("<br>","\\n").replace("\"","\\\"").replace("　"," ").replace("\n","\\n").replace("\u3000", " ").replace("&amp;","&").replace("&quot;","”").replace("&lt;","＜").replace("&gt;","＞").replace("&#39;","’").replace("‼","!!").replace("⁉","!?").replace("🈀","ほか").strip().translate(trans_table)
+	sanitized = s.replace("<wbr/>","").replace("<br>","\\n").replace("\"","\\\"").replace("　"," ").replace("\n","\\n").replace("\u3000", " ").replace("&amp;amp;","&").replace("&amp;","&").replace("&quot;","”").replace("&lt;","＜").replace("&gt;","＞").replace("&#39;","’").replace("‼","!!").replace("⁉","!?").replace("🈀","ほか").strip().translate(trans_table)
 	return " ".join(sanitized.split())
 
 def to_base50(n,fix):

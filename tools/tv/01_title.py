@@ -5,6 +5,7 @@ import tvlist
 import util
 import tvkingdom
 import patch
+import gtv
 import mietv
 import suntv
 import nhk
@@ -17,6 +18,7 @@ def create_diff(s, start_date, types, name_id, chapter_id, category, splited_by_
 
 	# 題名や概要の現れる回数をかぞえる
 	# ただしキー局の同時間帯と同じ場合はかぞえない
+
 	if name_id != None:
 		if not title_omitted:
 			num = titles[title_name]["num"]
@@ -137,11 +139,11 @@ def get_timetable(year, month, day, area):
 				add_list = patch.add(station_tag, pre_start_time, start_time)
 				for one in add_list:
 					add_types, add_title_string = tvkingdom.extractIconsFromTitle(one["title"])
-					add_title_name, add_chapter_name, splited_by_space = util.split_title_chapter(add_title_string, station_tag, year, month)
+					add_title_name, add_chapter_name, add_splited_by_space = util.split_title_chapter(add_title_string, station_tag, year, month)
 					add_name_id, add_chapter_id = append_title(add_title_name, add_chapter_name)
 					add_desc_id = append_description(one["desc"])
 					#last_programs_interval = one["interval"]
-					create_diff(station_tag, one["time"], add_types, add_name_id, add_chapter_id, one["code"], splited_by_space, add_desc_id, add_title_name, one["desc"])
+					create_diff(station_tag, one["time"], add_types, add_name_id, add_chapter_id, one["code"], add_splited_by_space, add_desc_id, add_title_name, one["desc"])
 
 			# ID作成
 			name_id, chapter_id = append_title(title_name, chapter_name)
@@ -216,6 +218,67 @@ def get_timetable_mxtv(year, month, day):
 		desc_id = append_description(summary)
 
 		chunk = create_diff("MX2", start_time, types, name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, summary)
+
+def get_timetable_gtv(year, month, day):
+	result = util.get_target_html(year, month, day, "GTV")
+	if result == 0:
+		return
+
+	gtv.checkContent(util.htmldata, year, month, day)
+	program_part = gtv.extractTodays(util.htmldata)
+
+	item_parts = gtv.splitByItem(program_part)
+	for item_part in item_parts:
+		# 時刻
+		start_time = gtv.extractStartTime(item_part)
+		if start_time == "":
+			continue
+
+		# 題名
+		title_with_icon = gtv.extractTitle(item_part)
+		if title_with_icon == "":
+			continue
+		# アイコン
+		types, title_string = tvkingdom.extractIconsFromTitle(title_with_icon)
+		# 題名
+		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "GTV2", year, month)
+		# ジャンル
+		genre_code = gtv.getCategoryCode(title_name)
+		# 概要
+		summary = gtv.getDescription(title_name)
+
+		# パッチあて(修正)
+		mod_time, mod_code, mod_title_with_icon, mod_desc, mod_interval = patch.modify("GTV2", start_time)
+		if mod_time != None:
+			start_time = mod_time
+		if mod_code != None:
+			genre_code = mod_code
+		if mod_title_with_icon != None:
+			types, title_string = tvkingdom.extractIconsFromTitle(mod_title_with_icon)
+			title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "GTV2", year, month)
+		if mod_desc != None:
+			summary = mod_desc
+		if mod_interval != None:
+			last_programs_interval = mod_interval
+
+		# ID作成
+		name_id, chapter_id = append_title(title_name, chapter_name)
+		desc_id = append_description(summary)
+
+		chunk = create_diff("GTV2", start_time, types, name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, summary)
+
+	name_id, chapter_id = append_title("この時間は031chをご覧ください。", None)
+	desc_id = append_description("録画は031chで行ってください。")
+	chunk = create_diff("GTV2", "0000", [], name_id, chapter_id, "115115", False, desc_id, "この時間は031chをご覧ください。", "録画は031chで行ってください。")
+
+	# パッチあて(末尾に追加)
+	add_list = patch.add("GTV2", start_time, None)
+	for one in add_list:
+		add_types, add_title_string = tvkingdom.extractIconsFromTitle(one["title"])
+		add_title_name, add_chapter_name, splited_by_space = util.split_title_chapter(add_title_string, "GTV2", year, month)
+		add_name_id, add_chapter_id = append_title(add_title_name, add_chapter_name)
+		add_desc_id = append_description(one["desc"])
+		create_diff("GTV2", one["time"], add_types, add_name_id, add_chapter_id, one["code"], splited_by_space, add_desc_id, add_title_name, one["desc"])
 
 def get_timetable_mietv(year, month, day):
 	result = util.get_target_html(year, month, day, "MTV")
@@ -423,14 +486,14 @@ def get_timetable_bs8(year, month, day):
 		desc_id = append_description(item["desc"])
 		bar = create_diff("BF2", item["time"], types, name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, item["desc"])
 
-	items = patch.add("GTV2", None, None)
+	items = patch.add("TVK2", None, None)
 	for item in items:
 		types, title_string = tvkingdom.extractIconsFromTitle(item["title"])
-		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "GTV2", year, month)
+		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "TVK2", year, month)
 		genre_code = item["code"]
 		name_id, chapter_id = append_title(title_name, chapter_name)
 		desc_id = append_description(item["desc"])
-		bar = create_diff("GTV2", item["time"], types, name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, item["desc"])
+		bar = create_diff("TVK2", item["time"], types, name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, item["desc"])
 
 
 
@@ -464,6 +527,7 @@ if __name__ == "__main__":
 				get_timetable_nhk(util.year, month, day, area)
 			get_timetable_ouj(util.year, month, day)
 			get_timetable_mxtv(util.year, month, day)
+			get_timetable_gtv(util.year, month, day)
 			get_timetable_mietv(util.year, month, day)
 			get_timetable_suntv(util.year, month, day)
 			get_timetable_bs4(util.year, month, day)

@@ -5,6 +5,7 @@ import tvlist
 import util
 import tvkingdom
 import patch
+import gtv
 import mietv
 import suntv
 import nhk
@@ -99,12 +100,12 @@ def get_timetable(year, month, day, area):
 					programs.append(chunk[:2])
 				gap_from = util.add_interval(False, start_time, last_programs_interval)
 
-			# ジャンル
-			genre_code = tvkingdom.extractCategoryCode(item_part)
 			# 題名(アイコン付き)
 			name_with_icon = tvkingdom.extractTitleWithIcons(item_part)
 			if name_with_icon == "":
 				continue
+			# ジャンル
+			genre_code = tvkingdom.extractCategoryCode(item_part)
 			# アイコン
 			types, title_string = tvkingdom.extractIconsFromTitle(name_with_icon)
 			# アイコンを取り除いた題名
@@ -133,11 +134,11 @@ def get_timetable(year, month, day, area):
 				add_list = patch.add(station_tag, pre_start_time, start_time)
 				for one in add_list:
 					add_types, add_title_string = tvkingdom.extractIconsFromTitle(one["title"])
-					add_title_name, add_chapter_name, splited_by_space = util.split_title_chapter(add_title_string, station_tag, year, month)
+					add_title_name, add_chapter_name, add_splited_by_space = util.split_title_chapter(add_title_string, station_tag, year, month)
 					add_name_id, add_chapter_id = get_title_id(add_title_name, add_chapter_name)
 					add_desc_id = get_description_id(one["desc"])
 					#last_programs_interval = one["interval"]
-					chunk = create_diff(station_tag, one["time"], add_types, add_name_id, add_chapter_id, one["code"], splited_by_space, add_desc_id)
+					chunk = create_diff(station_tag, one["time"], add_types, add_name_id, add_chapter_id, one["code"], add_splited_by_space, add_desc_id)
 					programs.append(chunk)
 
 			# ID作成
@@ -222,15 +223,17 @@ def get_timetable(year, month, day, area):
 
 		# 放映時間
 		if len(programs2) >= 1:
-			a = last_programs_interval
 			if not (station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2","OU2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29")):
-				programs2[-1] += ":" + str(a)
+				programs2[-1] += ":" + str(last_programs_interval)
 			if station_tag in util.main_channels:
-				util.standard_lasttime_interval[station_tag] = a
+				util.standard_lasttime_interval[station_tag] = last_programs_interval
 
 		if station_tag in ["EX2","CTC2","CTC3","ABS2","TSK2","KYT3","BT2","OU2"] and (year >= "2022" or month >= "10" or month == "09" and day >= "29"):
 			if len(programs2) !=0 and len(util.standard_programs_timeline[keysta]) != 0:
-				programs2[-1] += ":" + str(util.standard_lasttime_interval[keysta])
+				if len(util.fetch_gaps(station_tag, gap_from, None)) == 0:
+					programs2[-1] += ":" + str(last_programs_interval)
+				else:
+					programs2[-1] += ":" + str(util.standard_lasttime_interval[keysta])
 
 		stations.append({"name":station_tag, "programs":programs2})
 
@@ -307,6 +310,149 @@ def get_timetable_mxtv(year, month, day):
 		programs[-1] += ":60"
 	return {"name":"MX2", "programs":programs}
 
+def get_timetable_gtv(year, month, day):
+	result = util.get_target_html(year, month, day, "GTV")
+	if result == 0:
+		return {"name":"GTV2", "programs":[]}
+
+	gtv.checkContent(util.htmldata, year, month, day)
+	program_part = gtv.extractTodays(util.htmldata)
+
+	gap_from = None
+	gap_to = None
+	programs = []
+	item_parts = gtv.splitByItem(program_part)
+	for item_part in item_parts:
+		# 時刻
+		start_time = gtv.extractStartTime(item_part)
+
+		if gap_from != None:
+			pre_interval = util.get_interval(gap_from, start_time)
+			if pre_interval > 0:
+				pad_time, interval = gtv.isPaddingNeeded2(gap_from)
+				if pad_time != None:
+					name_id2, chapter_id2 = get_title_id("この時間は031chをご覧ください。", None)
+					desc_id2 = get_description_id("録画は031chで行ってください。")
+					chunk = create_diff("GTV2", pad_time, [], name_id2, chapter_id2, "115115", False, desc_id2)
+					programs.append(chunk)
+
+		# アイコン付き題名
+		title_with_icon = gtv.extractTitle(item_part)
+
+		# アイコン
+		types, title_string = tvkingdom.extractIconsFromTitle(title_with_icon)
+		# 題名
+		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "GTV2", year, month)
+		# ジャンル
+		genre_code = gtv.getCategoryCode(title_name)
+		# 概要
+		summary = gtv.getDescription(title_name)
+		# 放映時間
+		interval = gtv.getInterval(item_part)
+
+		# 群馬テレビ1の番組を埋める
+		pad_time = None
+		if gap_from != start_time:
+			pad_time = gtv.isPaddingNeeded(start_time)
+		if pad_time != None:
+			gap_to = pad_time
+		else:
+			gap_to = start_time
+		for chunk in util.fetch_gaps("GTV2", gap_from, gap_to):
+			programs.append(chunk[:2])
+		gap_from = util.add_interval(False, start_time, interval)
+#		if pad_time != None:
+#			gap_to = start_time
+
+		# 群馬テレビ2の番組を挿入
+		if pad_time != None:
+			name_id2, chapter_id2 = get_title_id("この時間は031chをご覧ください。", None)
+			desc_id2 = get_description_id("録画は031chで行ってください。")
+			chunk = create_diff("GTV2", pad_time, [], name_id2, chapter_id2, "115115", False, desc_id2)
+			programs.append(chunk)
+
+		# パッチあて(修正)
+		mod_time, mod_code, mod_title_with_icon, mod_desc, mod_interval = patch.modify("GTV2", start_time)
+		if mod_time != None:
+			start_time = mod_time
+		if mod_code != None:
+			genre_code = mod_code
+		if mod_title_with_icon != None:
+			types, title_string = tvkingdom.extractIconsFromTitle(mod_title_with_icon)
+			title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "GTV2", year, month)
+		if mod_desc != None:
+			summary = mod_desc
+		if mod_interval != None:
+			last_programs_interval = mod_interval
+
+		# ID作成
+		name_id, chapter_id = get_title_id(title_name, chapter_name)
+		desc_id = get_description_id(summary)
+
+		chunk = create_diff("GTV2", start_time, types, name_id, chapter_id, genre_code, splited_by_space, desc_id)
+		programs.append(chunk)
+
+	# パッチあて(末尾に追加)
+	add_list = patch.add("GTV2", start_time, None)
+	for one in add_list:
+		add_types, add_title_string = tvkingdom.extractIconsFromTitle(one["title"])
+		add_title_name, add_chapter_name, splited_by_space = util.split_title_chapter(add_title_string, "GTV2", year, month)
+		add_name_id, add_chapter_id = get_title_id(add_title_name, add_chapter_name)
+		add_desc_id = get_description_id(one["desc"])
+		last_programs_interval = one["interval"]
+		chunk = create_diff("GTV2", one["time"], add_types, add_name_id, add_chapter_id, one["code"], splited_by_space, add_desc_id)
+		programs.append(chunk)
+		gap_from = util.add_interval(False, one["time"], one["interval"])
+
+	pad_time, interval = gtv.isPaddingNeeded2(gap_from)
+	if pad_time != None:
+		name_id2, chapter_id2 = get_title_id("この時間は031chをご覧ください。", None)
+		desc_id2 = get_description_id("録画は031chで行ってください。")
+		chunk = create_diff("GTV2", pad_time, [], name_id2, chapter_id2, "115115", False, desc_id2)
+		programs.append(chunk)
+		gap_from = util.add_interval(False, gap_from, interval)
+
+	# 群馬テレビ1の番組を埋める
+	gap_to = None
+	for chunk in util.fetch_gaps("GTV2", gap_from, gap_to):
+		programs.append(chunk[:2])
+
+	# 連続する「フォーマット2」の間をハイフンで省略
+	programs2 = []
+	idx = 0
+	foundNum = 0
+	fountAt = 0
+	for program in programs:
+		if (len(program)) <= 2:
+			if foundNum == 0:
+				foundAt = idx
+			foundNum += 1
+		else:
+			if foundNum == 1:
+				programs2.append(programs[idx-1]+".")
+			elif foundNum == 2:
+				programs2.append(programs[idx-2]+".")
+				programs2.append(programs[idx-1]+".")
+			elif foundNum >= 3:
+				programs2.append(programs[foundAt]+"-"+programs[idx-1]+".")
+			programs2.append(program)
+			foundNum = 0
+		idx += 1
+	if foundNum == 1:
+		programs2.append(programs[idx-1]+".")
+	elif foundNum == 2:
+		programs2.append(programs[idx-2]+".")
+		programs2.append(programs[idx-1]+".")
+	elif foundNum >= 3:
+		programs2.append(programs[foundAt]+"-"+programs[idx-1]+".")
+
+	if gap_to != None:
+		programs2[-1] += ":" + str(util.get_interval(str(gap_to),"2900"))
+	elif len(programs2) !=0 and len(util.standard_programs_timeline["GTV"]) != 0:
+		programs2[-1] += ":" + str(util.standard_lasttime_interval["GTV"])
+
+	return {"name":"GTV2", "programs":programs2}
+
 def get_timetable_mietv(year, month, day):
 	result = util.get_target_html(year, month, day, "MTV")
 	if result == 0:
@@ -315,6 +461,7 @@ def get_timetable_mietv(year, month, day):
 	mietv.checkContent(util.htmldata, year, month, day)
 	program_part = mietv.extractMtv2(util.htmldata)
 
+	start_time = ""
 	gap_from = None
 	gap_to = None
 	end_of_multi_channel = None
@@ -515,7 +662,6 @@ def get_timetable_nhk(year, month, day, nhk_area):
 	program_cells = nhk.splitByItem(program_part)
 
 	for program_cell in program_cells:
-
 		# 放映時間
 		interval = nhk.getInterval(program_cell)
 		# サブチャンネル放送があるか
@@ -915,6 +1061,73 @@ def get_timetable_gtv2(year, month, day):
 
 
 
+def get_timetable_tvk2(year, month, day):
+	# テレビ神奈川のサブチャンネルは情報がないため patch.txt から作る
+	gap_from = None
+	gap_to = None
+	programs = []
+	items = patch.add("TVK2", None, None)
+	for item in items:
+		start_time = item["time"]
+		types, title_string = tvkingdom.extractIconsFromTitle(item["title"])
+		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "TVK2", year, month)
+		name_id, chapter_id = get_title_id(title_name, chapter_name)
+		genre_code = item["code"]
+		summary = item["desc"]
+		desc_id = get_description_id(summary)
+		interval = item["interval"]
+
+		# TVKの番組を埋める
+		gap_to = start_time
+		for chunk in util.fetch_gaps("TVK2", gap_from, gap_to):
+			programs.append(chunk[:2])
+		gap_from = util.add_interval(False, start_time, interval)
+
+		chunk = create_diff("TVK2", start_time, types, name_id, chapter_id, genre_code, splited_by_space, desc_id)
+		programs.append(chunk)
+
+	# TVKの番組を埋める
+	gap_to = None
+	for chunk in util.fetch_gaps("TVK2", gap_from, gap_to):
+		programs.append(chunk[:2])
+
+	# 連続する「フォーマット2」の間をハイフンで省略
+	programs2 = []
+	idx = 0
+	foundNum = 0
+	fountAt = 0
+	for program in programs:
+		if (len(program)) <= 2:
+			if foundNum == 0:
+				foundAt = idx
+			foundNum += 1
+		else:
+			if foundNum == 1:
+				programs2.append(programs[idx-1]+".")
+			elif foundNum == 2:
+				programs2.append(programs[idx-2]+".")
+				programs2.append(programs[idx-1]+".")
+			elif foundNum >= 3:
+				programs2.append(programs[foundAt]+"-"+programs[idx-1]+".")
+			programs2.append(program)
+			foundNum = 0
+		idx += 1
+	if foundNum == 1:
+		programs2.append(programs[idx-1]+".")
+	elif foundNum == 2:
+		programs2.append(programs[idx-2]+".")
+		programs2.append(programs[idx-1]+".")
+	elif foundNum >= 3:
+		programs2.append(programs[foundAt]+"-"+programs[idx-1]+".")
+
+	if len(programs2) !=0 and len(util.standard_programs_timeline["TVK"]) != 0:
+		programs2[-1] += ":" + str(util.standard_lasttime_interval["TVK"])
+
+	return {"name":"TVK2", "programs":programs2}
+
+
+
+
 
 
 def write_type_names():
@@ -1155,7 +1368,17 @@ if __name__ == "__main__":
 				outfile.write(program)
 			outfile.write("\"")
 			# 群馬テレビ2
-			station = get_timetable_gtv2(util.year, month, day)
+#			station = get_timetable_gtv2(util.year, month, day)
+#			if station != None:
+#				if not isFirstStation:
+#					outfile.write(",\r\n")
+#				isFirstStation = False
+#				outfile.write(station["name"] + ":\"")
+#				for program in station["programs"]:
+#					outfile.write(program)
+#				outfile.write("\"")
+			# テレビ神奈川2
+			station = get_timetable_tvk2(util.year, month, day)
 			if station != None:
 				if not isFirstStation:
 					outfile.write(",\r\n")
@@ -1174,6 +1397,15 @@ if __name__ == "__main__":
 				for program in station["programs"]:
 					outfile.write(program)
 				outfile.write("\"")
+			# 群馬テレビ2
+			station = get_timetable_gtv(util.year, month, day)
+			if not isFirstStation:
+				outfile.write(",\r\n")
+			isFirstStation = False
+			outfile.write(station["name"] + ":\"")
+			for program in station["programs"]:
+				outfile.write(program)
+			outfile.write("\"")
 			# 三重テレビ2
 			station = get_timetable_mietv(util.year, month, day)
 			if not isFirstStation:
