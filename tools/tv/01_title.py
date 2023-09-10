@@ -228,10 +228,16 @@ def get_timetable_gtv(year, month, day):
 	program_part = gtv.extractTodays(util.htmldata)
 
 	item_parts = gtv.splitByItem(program_part)
+	start_time = None
 	for item_part in item_parts:
 		# 時刻
 		start_time = gtv.extractStartTime(item_part)
 		if start_time == "":
+			continue
+
+		# パッチあて(削除)
+		toDelete, delete_interval = patch.delete("GTV2", start_time)
+		if toDelete:
 			continue
 
 		# 題名

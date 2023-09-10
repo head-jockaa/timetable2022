@@ -259,6 +259,8 @@ def getCategoryCode(title_name):
 			return "100105"
 		else:
 			return "100100"
+	elif "サタデーウオッチ" in title_name:
+		return "100100"
 	elif "戦没者追悼式" in title_name:
 		return "100102"
 	elif "マーケット" in title_name:
@@ -267,7 +269,7 @@ def getCategoryCode(title_name):
 		return "101106"
 	elif "MLB" in title_name or "野球" in title_name:
 		return "101101"
-	elif "Jリーグ" in title_name or "WEリーグ" in title_name or "サッカー" in title_name or "JFA" in title_name:
+	elif "Jリーグ" in title_name or "WEリーグ" in title_name or "サッカー" in title_name or "JFA" in title_name or "FIFA" in title_name:
 		return "101102"
 	elif "ゴルフ" in title_name:
 		return "101103"

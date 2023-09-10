@@ -100,12 +100,12 @@ def get_timetable(year, month, day, area):
 					programs.append(chunk[:2])
 				gap_from = util.add_interval(False, start_time, last_programs_interval)
 
+			# ジャンル
+			genre_code = tvkingdom.extractCategoryCode(item_part)
 			# 題名(アイコン付き)
 			name_with_icon = tvkingdom.extractTitleWithIcons(item_part)
 			if name_with_icon == "":
 				continue
-			# ジャンル
-			genre_code = tvkingdom.extractCategoryCode(item_part)
 			# アイコン
 			types, title_string = tvkingdom.extractIconsFromTitle(name_with_icon)
 			# アイコンを取り除いた題名
@@ -321,10 +321,16 @@ def get_timetable_gtv(year, month, day):
 	gap_from = None
 	gap_to = None
 	programs = []
+	start_time = None
 	item_parts = gtv.splitByItem(program_part)
 	for item_part in item_parts:
 		# 時刻
 		start_time = gtv.extractStartTime(item_part)
+
+		# パッチあて(削除)
+		toDelete, delete_interval = patch.delete("GTV2", start_time)
+		if toDelete:
+			continue
 
 		if gap_from != None:
 			pre_interval = util.get_interval(gap_from, start_time)
@@ -395,6 +401,18 @@ def get_timetable_gtv(year, month, day):
 	# パッチあて(末尾に追加)
 	add_list = patch.add("GTV2", start_time, None)
 	for one in add_list:
+		# 群馬テレビ1の番組を埋める
+		pad_time = None
+		if gap_from != one["time"]:
+			pad_time = gtv.isPaddingNeeded(one["time"])
+		if pad_time != None:
+			gap_to = pad_time
+		else:
+			gap_to = one["time"]
+		for chunk in util.fetch_gaps("GTV2", gap_from, gap_to):
+			programs.append(chunk[:2])
+		gap_from = util.add_interval(False, one["time"], one["interval"])
+
 		add_types, add_title_string = tvkingdom.extractIconsFromTitle(one["title"])
 		add_title_name, add_chapter_name, splited_by_space = util.split_title_chapter(add_title_string, "GTV2", year, month)
 		add_name_id, add_chapter_id = get_title_id(add_title_name, add_chapter_name)

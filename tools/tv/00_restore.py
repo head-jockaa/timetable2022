@@ -1266,10 +1266,15 @@ def output_html_mietv(year, month, day):
 
 	today_string = str((int)(month)) + "月" + str((int)(day)) + "日"
 	outfile.write('<html><head><meta charset="utf-8" /></head><body><span class="current">' + today_string + '</span><div id="ch2"><table>\n')
+	has_program = False
 	idx = 0
 	for chunk in timetables[month][day]["MTV2"]:
 		if "MTV" in timetables[month][day] and chunk in timetables[month][day]["MTV"]:
-			break
+			if idx == 0:
+				idx += 1
+				continue
+			else:
+				break
 		hour = str(base60.index(chunk[0]))
 		if len(hour) == 1:
 			hour = "0" + str(hour)
@@ -1294,9 +1299,10 @@ def output_html_mietv(year, month, day):
 		outfile.write('<td><p class="title">' + full_title + types_string + '</p>')
 		outfile.write('<p>' + decode_string(descriptions[desc_id]) + '</p></td>\n')
 		outfile.write('</tr>\n')
+		has_program = True
 		idx += 1
 
-	if idx != 0:
+	if has_program:
 		a = util.time_decode_base60( timetables[month][day]["MTV2"][idx][:2] )
 		outfile.write('<tr>\n')
 		outfile.write('<td>' + a[:2] + ':' + a[2:] + '</td>\n')
@@ -1514,6 +1520,8 @@ def output_bs8title(title):
 		return "italia2"
 	elif title == "MUSIC:S 欧州鉄道の旅・オランダ①":
 		return "oranda1"
+	elif title == "MUSIC:S 欧州鉄道の旅・オランダ②":
+		return "oranda2"
 	elif title == "MUSIC:S 欧州鉄道の旅・スペイン①":
 		return "spain1"
 	elif title == "MUSIC:S 欧州鉄道の旅・スペイン②":

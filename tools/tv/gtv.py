@@ -51,12 +51,15 @@ def isPaddingNeeded(time):
 	return None
 
 def isPaddingNeeded2(time):
+	if time == None:
+		return None, None
+
 	for chunk in util.standard_programs_timeline["GTV"]:
 		if time == util.time_decode_base60(chunk):
 			return None, None
 		elif time < util.time_decode_base60(chunk):
 			return time, util.get_interval(time, util.time_decode_base60(chunk))
-	return None
+	return None, None
 
 def getCategoryCode(title_name):
 	if title_name == "お天気情報":
@@ -65,6 +68,8 @@ def getCategoryCode(title_name):
 		return "104100"
 	elif title_name == "読売デジタルニュース":
 		return "100100"
+	elif "野球" in title_name:
+		return "101101"
 	else:
 		return "115115"
 
