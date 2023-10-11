@@ -192,7 +192,7 @@ def get_timetable(year, month, day, area):
 			if (len(program)) <= 2:
 
 				if foundNum != 0 and program in standards_sorted and pre_program in standards_sorted:
-					if standards_sorted.index(pre_program) + 1 != standards_sorted.index(program):
+					if standards_sorted[standards_sorted.index(program)-1] != pre_program:
 						#print(util.time_decode_base60(program) + " " + station_tag)
 						programs2.append(programs[foundAt]+"-"+pre_program+".")
 						foundNum = 0
@@ -945,6 +945,69 @@ def get_timetable_bs4(year, month, day):
 
 
 
+def get_timetable_bs6(year, month, day):
+	# BS-TBSのサブチャンネルは情報がないため patch.txt から作る
+	gap_from = None
+	gap_to = None
+	programs = []
+	items = patch.add("BB2", None, None)
+	for item in items:
+		start_time = item["time"]
+		types, title_string = tvkingdom.extractIconsFromTitle(item["title"])
+		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "BB2", year, month)
+		name_id, chapter_id = get_title_id(title_name, chapter_name)
+		genre_code = item["code"]
+		summary = item["desc"]
+		desc_id = get_description_id(summary)
+		interval = item["interval"]
+
+		# ch161の番組を埋める
+		gap_to = start_time
+		for chunk in util.fetch_gaps("BB2", gap_from, gap_to):
+			programs.append(chunk[:2])
+		gap_from = util.add_interval(False, start_time, interval)
+
+		chunk = create_diff("BB2", start_time, types, name_id, chapter_id, genre_code, splited_by_space, desc_id)
+		programs.append(chunk)
+
+	# ch161の番組を埋める
+	gap_to = None
+	for chunk in util.fetch_gaps("BB2", gap_from, gap_to):
+		programs.append(chunk[:2])
+
+	# 連続する「フォーマット2」の間をハイフンで省略
+	programs2 = []
+	idx = 0
+	foundNum = 0
+	fountAt = 0
+	for program in programs:
+		if (len(program)) <= 2:
+			if foundNum == 0:
+				foundAt = idx
+			foundNum += 1
+		else:
+			if foundNum == 1:
+				programs2.append(programs[idx-1]+".")
+			elif foundNum == 2:
+				programs2.append(programs[idx-2]+".")
+				programs2.append(programs[idx-1]+".")
+			elif foundNum >= 3:
+				programs2.append(programs[foundAt]+"-"+programs[idx-1]+".")
+			programs2.append(program)
+			foundNum = 0
+		idx += 1
+	if foundNum == 1:
+		programs2.append(programs[idx-1]+".")
+	elif foundNum == 2:
+		programs2.append(programs[idx-2]+".")
+		programs2.append(programs[idx-1]+".")
+	elif foundNum >= 3:
+		programs2.append(programs[foundAt]+"-"+programs[idx-1]+".")
+
+	if len(programs2) !=0 and len(util.standard_programs_timeline["BS6"]) != 0:
+		programs2[-1] += ":" + str(util.standard_lasttime_interval["BS6"])
+
+	return {"name":"BB2", "programs":programs2}
 
 def get_timetable_bs8(year, month, day):
 	# BSフジのサブチャンネルは情報がないため patch.txt から作る
@@ -1369,6 +1432,15 @@ if __name__ == "__main__":
 					outfile.write("\"")
 			# BS日テレ
 			station = get_timetable_bs4(util.year, month, day)
+			if not isFirstStation:
+				outfile.write(",\r\n")
+			isFirstStation = False
+			outfile.write(station["name"] + ":\"")
+			for program in station["programs"]:
+				outfile.write(program)
+			outfile.write("\"")
+			# BS-TBS
+			station = get_timetable_bs6(util.year, month, day)
 			if not isFirstStation:
 				outfile.write(",\r\n")
 			isFirstStation = False

@@ -130,7 +130,7 @@ def get_my_key_station(station_tag):
 		return "BS4"
 	elif station_tag == "FK5":
 		return "BS5"
-	elif station_tag == "FK6":
+	elif station_tag == "FK6" or station_tag == "BB2":
 		return "BS6"
 	elif station_tag == "FK7" or station_tag == "BT2":
 		return "BS7"
@@ -309,7 +309,7 @@ def get_splitter_data(year, month):
 			to_year = splited2[1][:4]
 			to_month = splited2[1][4:]
 			for station in stations:
-				if from_year < year or (from_year == year and from_month <= month) and year < to_year or (year == from_year and month <= to_month):
+				if (from_year < year or (from_year == year and from_month <= month)) and (year < to_year or (year == from_year and month <= to_month)):
 					if station not in splitter_data:
 						splitter_data[station] = ""
 					if splitter_data[station] != "":

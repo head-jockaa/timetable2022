@@ -483,6 +483,15 @@ def get_timetable_bs4(year, month, day):
 		bar = create_diff("BN2", d["start"], [], name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, " ")
 
 def get_timetable_bs8(year, month, day):
+	items = patch.add("BB2", None, None)
+	for item in items:
+		types, title_string = tvkingdom.extractIconsFromTitle(item["title"])
+		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "BB2", year, month)
+		genre_code = item["code"]
+		name_id, chapter_id = append_title(title_name, chapter_name)
+		desc_id = append_description(item["desc"])
+		bar = create_diff("BB2", item["time"], types, name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, item["desc"])
+
 	items = patch.add("BF2", None, None)
 	for item in items:
 		types, title_string = tvkingdom.extractIconsFromTitle(item["title"])

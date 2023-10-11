@@ -841,7 +841,7 @@ def decompressProgramChunk(month, day, tv, chunk_string):
 		keysta = "BS4"
 	elif tv == "FK5":
 		keysta = "BS5"
-	elif tv == "FK6":
+	elif tv == "FK6" or tv == "BB2":
 		keysta = "BS6"
 	elif tv == "FK7" or tv == "BT2":
 		keysta = "BS7"
@@ -881,6 +881,14 @@ def decompressProgramChunk(month, day, tv, chunk_string):
 
 	result = []
 	chunks = split_chunk(chunk_string)
+
+	is_first = True
+	has_yesterday = False
+	if len(chunks) >= 2 and chunks[0][:2] > chunks[1][:2]:
+		# たとえば最初が23:00で次が05:00の場合
+		yesterdays_program = chunks[0]
+		has_yesterday = True
+
 	for c in chunks:
 		splitedColon2 = c.split(":")
 		chunk = splitedColon2[0]
@@ -889,9 +897,16 @@ def decompressProgramChunk(month, day, tv, chunk_string):
 		chunk = chunk[:-1]
 
 		if len(chunk) <= 2:
+			idx = 0
 			for k in keystas_table:
 				if chunk == k[:2]:
+					if has_yesterday and not is_first and idx==0 and yesterdays_program[:2] == k[:2]:
+						#昨日の23:00と今日の23:00が両方含まれている場合の対策
+						idx+=1
+						continue
 					result.append(k)
+					break
+				idx+=1
 		elif "*" in chunk:
 			splited = chunk.split("*")
 			for k in keystas_table:
@@ -907,13 +922,18 @@ def decompressProgramChunk(month, day, tv, chunk_string):
 		elif "-" in chunk:
 			splited = chunk.split("-")
 			start = False
+			idx = 0
 			for k in keystas_table:
 				if splited[0] == k[:2]:
+					if has_yesterday and not is_first and idx==0 and yesterdays_program[:2] == k[:2]:
+						idx+=1
+						continue
 					start = True
 				if start:
 					result.append(k)
 				if splited[1] == k[:2]:
 					break;
+				idx+=1
 		elif "^" in chunk:
 			keysta_sub_string = ""
 			if tv.startswith("sG") and "sG23" in original_timetables[month][day]:
@@ -928,6 +948,8 @@ def decompressProgramChunk(month, day, tv, chunk_string):
 					break
 		else:
 			result.append(chunk + ("," if splited_by_space else "."))
+
+		is_first = False
 
 	if len(splitedColon2) == 1:
 		return "".join(result)
@@ -1385,12 +1407,58 @@ def output_html_suntv(year, month, day):
 	outfile.write('</body></html>\n')
 	outfile.close()
 
-def output_html_bs8_tvk2(year, month, day):
+def output_html_bs6_bs8_tvk2(year, month, day):
 	dir_path = "restore" + year + "/" + month + "/" + day
 	if not os.path.isdir(dir_path):
 		os.makedirs(dir_path)
 	file_path = dir_path + "/" + year + "_" + month + "_" + day + "_patch.txt"
 	outfile = open(file_path, "w")
+
+	outfile.write('> BB2\n')
+	idx = 0
+	for chunk in timetables[month][day]["BB2"]:
+		if "BS6" in timetables[month][day] and chunk in timetables[month][day]["BS6"]:
+			idx += 1
+			continue
+		hour = str(base60.index(chunk[0]))
+		if len(hour) == 1:
+			hour = "0" + str(hour)
+		minute = str(base60.index(chunk[1]))
+		if len(minute) == 1:
+			minute = "0" + str(minute)
+
+		category, types, title_id, chapter_id, desc_id, interval, splited_by_space = read_chunk(chunk)
+
+		types_string = ""
+		for t in types:
+			types_string += "[" + t + "]"
+
+		full_title = decode_string(titles[title_id][0])
+		if splited_by_space:
+			full_title += " "
+		if chapter_id != None:
+			full_title += decode_string(titles[title_id][1][chapter_id])
+
+		if ":" in chunk:
+			interval = chunk.split(":")[1]
+		else:
+			a = util.time_decode_base60( timetables[month][day]["BB2"][idx][:2] )
+			b = util.time_decode_base60( timetables[month][day]["BB2"][idx+1][:2] )
+			interval = str(util.get_interval(a,b))
+
+		outfile.write('add ' + hour + minute + '\n')
+
+		bs8title = output_bs8title(full_title)
+		if bs8title != None:
+			outfile.write('bs8title ' + bs8title + '\n')
+			if interval != "30":
+				outfile.write('interval ' + interval + '\n')
+		else:
+			outfile.write('interval ' + interval + '\n')
+			outfile.write('code ' + category + '\n')
+			outfile.write('title ' + full_title + types_string + '\n')
+			outfile.write('desc ' + decode_string(descriptions[desc_id]) + '\n\n')
+		idx += 1
 
 	outfile.write('> BF2\n')
 	idx = 0
@@ -1506,6 +1574,10 @@ def output_html_bs8_tvk2(year, month, day):
 def output_bs8title(title):
 	if title == "ジュエリーライフNEXT":
 		return "jewel"
+	elif title == "麗しの宝石ショッピングConnect":
+		return "jewel2"
+	elif title == "Sound Shower":
+		return "shower"
 	elif title == "MUSIC:S 欧州鉄道の旅・ポーランド①":
 		return "poland1"
 	elif title == "MUSIC:S 欧州鉄道の旅・ポーランド②":
@@ -1950,7 +2022,7 @@ if __name__ == "__main__":
 			output_html_gtv(util.year, month, day)
 			output_html_mietv(util.year, month, day)
 			output_html_suntv(util.year, month, day)
-			output_html_bs8_tvk2(util.year, month, day)
+			output_html_bs6_bs8_tvk2(util.year, month, day)
 			for nhk_area in nhk.nhk_areas:
 				output_html_nhk(util.year, month, day, nhk_area)
 			print(util.year+"-"+month+"-"+day)

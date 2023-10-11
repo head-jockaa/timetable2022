@@ -412,10 +412,10 @@ if __name__ == "__main__":
 	while len(encoder_string) < range1:
 		encoder_string += "あ"
 	encoder_string2 = encoder_string2.replace(" ","")
-	while len(encoder_string2) < range2:
+	while len(encoder_string2) < range2 * 2:
 		encoder_string2 += "ああ"
 	encoder_string3 = encoder_string3.replace(" ","")
-	while len(encoder_string3) < range3:
+	while len(encoder_string3) < range3 * 3:
 		encoder_string3 += "あああ"
 
 	outfile = open("scripts/decoder.js", 'w')
