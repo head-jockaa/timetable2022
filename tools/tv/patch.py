@@ -104,47 +104,47 @@ def getBs8Title(value):
 	elif value == "shower":
 		return "Sound Shower"
 	elif value == "poland1":
-		return "MUSIC:S 欧州鉄道の旅・ポーランド①"
+		return "MUSIC:S 欧州鉄道の旅・ポーランド1"
 	elif value == "poland2":
-		return "MUSIC:S 欧州鉄道の旅・ポーランド②"
+		return "MUSIC:S 欧州鉄道の旅・ポーランド2"
 	elif value == "austlia1":
-		return "MUSIC:S 欧州鉄道の旅・オーストリア①"
+		return "MUSIC:S 欧州鉄道の旅・オーストリア1"
 	elif value == "austlia2":
-		return "MUSIC:S 欧州鉄道の旅・オーストリア②"
+		return "MUSIC:S 欧州鉄道の旅・オーストリア2"
 	elif value == "italia1":
-		return "MUSIC:S 欧州鉄道の旅・イタリア①"
+		return "MUSIC:S 欧州鉄道の旅・イタリア1"
 	elif value == "italia2":
-		return "MUSIC:S 欧州鉄道の旅・イタリア②"
+		return "MUSIC:S 欧州鉄道の旅・イタリア2"
 	elif value == "oranda1":
-		return "MUSIC:S 欧州鉄道の旅・オランダ①"
+		return "MUSIC:S 欧州鉄道の旅・オランダ1"
 	elif value == "oranda2":
-		return "MUSIC:S 欧州鉄道の旅・オランダ②"
+		return "MUSIC:S 欧州鉄道の旅・オランダ2"
 	elif value == "spain1":
-		return "MUSIC:S 欧州鉄道の旅・スペイン①"
+		return "MUSIC:S 欧州鉄道の旅・スペイン1"
 	elif value == "spain2":
-		return "MUSIC:S 欧州鉄道の旅・スペイン②"
+		return "MUSIC:S 欧州鉄道の旅・スペイン2"
 	elif value == "aqua1":
-		return "MUSIC:S 体感！魅惑のアクアリウム①"
+		return "MUSIC:S 体感！魅惑のアクアリウム1"
 	elif value == "aqua2":
-		return "MUSIC:S 体感！魅惑のアクアリウム②"
+		return "MUSIC:S 体感！魅惑のアクアリウム2"
 	elif value == "aqua3":
-		return "MUSIC:S 体感！魅惑のアクアリウム③"
+		return "MUSIC:S 体感！魅惑のアクアリウム3"
 	elif value == "taki1":
-		return "MUSIC:S にっぽん名滝探訪①"
+		return "MUSIC:S にっぽん名滝探訪1"
 	elif value == "taki2":
-		return "MUSIC:S にっぽん名滝探訪②"
+		return "MUSIC:S にっぽん名滝探訪2"
 	elif value == "taki3":
-		return "MUSIC:S にっぽん名滝探訪③"
+		return "MUSIC:S にっぽん名滝探訪3"
 	elif value == "island1":
-		return "MUSIC:S グレートアイランド 悠久の時を生きる①"
+		return "MUSIC:S グレートアイランド 悠久の時を生きる1"
 	elif value == "island2":
-		return "MUSIC:S グレートアイランド 悠久の時を生きる②"
+		return "MUSIC:S グレートアイランド 悠久の時を生きる2"
 	elif value == "kitchen1":
-		return "MUSIC:S キッチン百景①"
+		return "MUSIC:S キッチン百景1"
 	elif value == "kitchen2":
-		return "MUSIC:S キッチン百景②"
+		return "MUSIC:S キッチン百景2"
 	elif value == "road1":
-		return "MUSIC:S ON THE ROAD①"
+		return "MUSIC:S ON THE ROAD1"
 	else:
 		return ""
 

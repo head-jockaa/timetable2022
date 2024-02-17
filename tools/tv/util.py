@@ -8,7 +8,7 @@ import re
 htmldata = None
 splitter_data = {}
 
-year = "2023"
+year = "2024"
 months = ["01","02","03","04","05","06","07","08","09","10","11","12"]
 days = ["01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31"]
 
@@ -309,7 +309,7 @@ def get_splitter_data(year, month):
 			to_year = splited2[1][:4]
 			to_month = splited2[1][4:]
 			for station in stations:
-				if (from_year < year or (from_year == year and from_month <= month)) and (year < to_year or (year == from_year and month <= to_month)):
+				if (from_year < year or (from_year == year and from_month <= month)) and (year < to_year or (year == to_year and month <= to_month)):
 					if station not in splitter_data:
 						splitter_data[station] = ""
 					if splitter_data[station] != "":
@@ -351,7 +351,7 @@ def split_title_chapter(title_string, station_tag, year, month):
 
 		# 括弧数字よりは「第何話」を優先
 		if chapterPointer == 0:
-			matchObj = re.search(r'第.{1,4}(話|節|日|週|戦)', title_string)
+			matchObj = re.search(r'第.{1,4}(話|節|日|週|戦|夜)', title_string)
 			if matchObj:
 				chapterPointer = matchObj.start()
 

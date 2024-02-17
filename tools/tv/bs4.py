@@ -112,7 +112,7 @@ def getCategoryCode(title_name):
 		return "101106"
 	elif "MotoGP" in title_name:
 		return "101108"
-	elif "お得α" == title_name:
+	elif "お得α" == title_name or "ジェムサローネ" in title_name:
 		return "102104"
 	elif "NEWS" in title_name:
 		return "100100"

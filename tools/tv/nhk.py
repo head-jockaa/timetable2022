@@ -277,7 +277,7 @@ def getCategoryCode(title_name):
 		return "101104"
 	elif  "相撲" in title_name or "剣道" in title_name or "柔道" in title_name or "空手道" in title_name:
 		return "101105"
-	elif "競泳" in title_name or "陸上" in title_name:
+	elif "競泳" in title_name or "陸上" in title_name or "駅伝" in title_name:
 		return "101107"
 	elif "ノルディック" in title_name or "アルペン" in title_name or "カーリング" in title_name or "アイスホッケー" in title_name or "スピードスケート" in title_name or "スノーボード" in title_name or "NHK杯フィギュア" in title_name or "NHK杯ジャンプ" in title_name:
 		return "101109"
@@ -313,5 +313,7 @@ def getCategoryCode(title_name):
 		return "110102"
 	elif "高校講座" in title_name or title_name == "ロンリのちから":
 		return "110109"
+	elif title_name == "ＮＨＫラーニング":
+		return "110111"
 	else:
 		return "115115"

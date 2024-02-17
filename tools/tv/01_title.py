@@ -10,6 +10,7 @@ import mietv
 import suntv
 import nhk
 import bs4
+import bs8
 
 # 先に titles_raw.js と descriptions_raw.js を出力する。よく出てくる物に桁数の小さいIDを与える。
 
@@ -18,7 +19,6 @@ def create_diff(s, start_date, types, name_id, chapter_id, category, splited_by_
 
 	# 題名や概要の現れる回数をかぞえる
 	# ただしキー局の同時間帯と同じ場合はかぞえない
-
 	if name_id != None:
 		if not title_omitted:
 			num = titles[title_name]["num"]
@@ -476,6 +476,11 @@ def get_timetable_bs4(year, month, day):
 			diff.append(r)
 
 	for d in diff:
+		# パッチあて(削除)
+		toDelete, delete_interval = patch.delete("BN2", d["start"])
+		if toDelete:
+			continue
+
 		title_name, chapter_name, splited_by_space = util.split_title_chapter(d["title"], "BN2", year, month)
 		genre_code = bs4.getCategoryCode(title_name)
 		name_id, chapter_id = append_title(title_name, chapter_name)
@@ -483,6 +488,42 @@ def get_timetable_bs4(year, month, day):
 		bar = create_diff("BN2", d["start"], [], name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, " ")
 
 def get_timetable_bs8(year, month, day):
+	result1 = bs8.get_html_bs181(year, month, day)
+	result2 = bs8.get_html_bs182(year, month, day)
+	if not result1 or not result2:
+		return
+
+	result1 = bs8.extractTimetableOf(bs8.htmldata_bs181, year, month, day)
+	result2 = bs8.extractTimetableOf(bs8.htmldata_bs182, year, month, day)
+
+	diff = []
+	for r in result2:
+		if r not in result1:
+			diff.append(r)
+
+	for d in diff:
+		title_name, chapter_name, splited_by_space = util.split_title_chapter(d["title"], "BF2", year, month)
+		start_time = d["start"]
+		summary = d["desc"]
+
+		# パッチあて(修正)
+		mod_time, mod_code, mod_title_with_icon, mod_desc, mod_interval = patch.modify("BF2", start_time)
+		if mod_time != None:
+			start_time = mod_time
+		if mod_desc != None:
+			summary = mod_desc
+
+		if mod_code != None:
+			genre_code = mod_code
+		else:
+			genre_code = bs8.getCategoryCode(title_name)
+
+		name_id, chapter_id = append_title(title_name, chapter_name)
+		desc_id = append_description(summary)
+
+		bar = create_diff("BF2", start_time, [], name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, summary)
+
+def get_timetable_bs6(year, month, day):
 	items = patch.add("BB2", None, None)
 	for item in items:
 		types, title_string = tvkingdom.extractIconsFromTitle(item["title"])
@@ -491,15 +532,6 @@ def get_timetable_bs8(year, month, day):
 		name_id, chapter_id = append_title(title_name, chapter_name)
 		desc_id = append_description(item["desc"])
 		bar = create_diff("BB2", item["time"], types, name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, item["desc"])
-
-	items = patch.add("BF2", None, None)
-	for item in items:
-		types, title_string = tvkingdom.extractIconsFromTitle(item["title"])
-		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "BF2", year, month)
-		genre_code = item["code"]
-		name_id, chapter_id = append_title(title_name, chapter_name)
-		desc_id = append_description(item["desc"])
-		bar = create_diff("BF2", item["time"], types, name_id, chapter_id, genre_code, splited_by_space, desc_id, title_name, item["desc"])
 
 	items = patch.add("TVK2", None, None)
 	for item in items:
@@ -547,6 +579,7 @@ if __name__ == "__main__":
 			get_timetable_suntv(util.year, month, day)
 			get_timetable_bs4(util.year, month, day)
 			get_timetable_bs8(util.year, month, day)
+			get_timetable_bs6(util.year, month, day)
 			print(util.year + "-" + month + "-" + day)
 
 	score_sorted = sorted(titles.items(), key=lambda x:x[1]["num"], reverse=True)

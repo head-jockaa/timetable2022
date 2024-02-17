@@ -5,6 +5,7 @@ import datetime
 import util
 import tvlist
 import nhk
+import bs8
 
 base64_special = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","@","$","{","|","}",";","*","_","~","^","`","'"]
 
@@ -1407,7 +1408,7 @@ def output_html_suntv(year, month, day):
 	outfile.write('</body></html>\n')
 	outfile.close()
 
-def output_html_bs6_bs8_tvk2(year, month, day):
+def output_html_bs6_tvk2(year, month, day):
 	dir_path = "restore" + year + "/" + month + "/" + day
 	if not os.path.isdir(dir_path):
 		os.makedirs(dir_path)
@@ -1448,53 +1449,7 @@ def output_html_bs6_bs8_tvk2(year, month, day):
 
 		outfile.write('add ' + hour + minute + '\n')
 
-		bs8title = output_bs8title(full_title)
-		if bs8title != None:
-			outfile.write('bs8title ' + bs8title + '\n')
-			if interval != "30":
-				outfile.write('interval ' + interval + '\n')
-		else:
-			outfile.write('interval ' + interval + '\n')
-			outfile.write('code ' + category + '\n')
-			outfile.write('title ' + full_title + types_string + '\n')
-			outfile.write('desc ' + decode_string(descriptions[desc_id]) + '\n\n')
-		idx += 1
-
-	outfile.write('> BF2\n')
-	idx = 0
-	for chunk in timetables[month][day]["BF2"]:
-		if "BS8" in timetables[month][day] and chunk in timetables[month][day]["BS8"]:
-			idx += 1
-			continue
-		hour = str(base60.index(chunk[0]))
-		if len(hour) == 1:
-			hour = "0" + str(hour)
-		minute = str(base60.index(chunk[1]))
-		if len(minute) == 1:
-			minute = "0" + str(minute)
-
-		category, types, title_id, chapter_id, desc_id, interval, splited_by_space = read_chunk(chunk)
-
-		types_string = ""
-		for t in types:
-			types_string += "[" + t + "]"
-
-		full_title = decode_string(titles[title_id][0])
-		if splited_by_space:
-			full_title += " "
-		if chapter_id != None:
-			full_title += decode_string(titles[title_id][1][chapter_id])
-
-		if ":" in chunk:
-			interval = chunk.split(":")[1]
-		else:
-			a = util.time_decode_base60( timetables[month][day]["BF2"][idx][:2] )
-			b = util.time_decode_base60( timetables[month][day]["BF2"][idx+1][:2] )
-			interval = str(util.get_interval(a,b))
-
-		outfile.write('add ' + hour + minute + '\n')
-
-		bs8title = output_bs8title(full_title)
+		bs8title = output_bs6title(full_title)
 		if bs8title != None:
 			outfile.write('bs8title ' + bs8title + '\n')
 			if interval != "30":
@@ -1571,55 +1526,11 @@ def output_html_bs6_bs8_tvk2(year, month, day):
 
 	outfile.close()
 
-def output_bs8title(title):
-	if title == "ジュエリーライフNEXT":
-		return "jewel"
-	elif title == "麗しの宝石ショッピングConnect":
+def output_bs6title(title):
+	if title == "麗しの宝石ショッピングConnect":
 		return "jewel2"
 	elif title == "Sound Shower":
 		return "shower"
-	elif title == "MUSIC:S 欧州鉄道の旅・ポーランド①":
-		return "poland1"
-	elif title == "MUSIC:S 欧州鉄道の旅・ポーランド②":
-		return "poland2"
-	elif title == "MUSIC:S 欧州鉄道の旅・オーストリア①":
-		return "austlia1"
-	elif title == "MUSIC:S 欧州鉄道の旅・オーストリア②":
-		return "austlia2"
-	elif title == "MUSIC:S 欧州鉄道の旅・イタリア①":
-		return "italia1"
-	elif title == "MUSIC:S 欧州鉄道の旅・イタリア②":
-		return "italia2"
-	elif title == "MUSIC:S 欧州鉄道の旅・オランダ①":
-		return "oranda1"
-	elif title == "MUSIC:S 欧州鉄道の旅・オランダ②":
-		return "oranda2"
-	elif title == "MUSIC:S 欧州鉄道の旅・スペイン①":
-		return "spain1"
-	elif title == "MUSIC:S 欧州鉄道の旅・スペイン②":
-		return "spain2"
-	elif title == "MUSIC:S 体感！魅惑のアクアリウム①":
-		return "aqua1"
-	elif title == "MUSIC:S 体感！魅惑のアクアリウム②":
-		return "aqua2"
-	elif title == "MUSIC:S 体感！魅惑のアクアリウム③":
-		return "aqua3"
-	elif title == "MUSIC:S にっぽん名滝探訪①":
-		return "taki1"
-	elif title == "MUSIC:S にっぽん名滝探訪②":
-		return "taki2"
-	elif title == "MUSIC:S にっぽん名滝探訪③":
-		return "taki3"
-	elif title == "MUSIC:S グレートアイランド 悠久の時を生きる①":
-		return "island1"
-	elif title == "MUSIC:S グレートアイランド 悠久の時を生きる②":
-		return "island2"
-	elif title == "MUSIC:S キッチン百景①":
-		return "kitchen1"
-	elif title == "MUSIC:S キッチン百景②":
-		return "kitchen2"
-	elif title == "MUSIC:S ON THE ROAD①":
-		return "road1"
 	else:
 		return None
 
@@ -1921,6 +1832,155 @@ def output_html_bs4(days):
 	outfile.write('</body></html>\n')
 	outfile.close()
 
+def output_html_bs8(days):
+	hit = [False,False,False,False,False,False,False]
+	hit_one = False
+	idx = 0
+	days_tag = ""
+	for d in days:
+		if d == None:
+			idx+=1
+			continue
+		if d.month < 10:
+			month = "0" + str(d.month)
+		else:
+			month = str(d.month)
+		if d.day < 10:
+			day = "0" + str(d.day)
+		else:
+			day = str(d.day)
+		days_tag += "<span>" + str(d.month) + "/" + day + "</span>"
+		if month in timetables and day in timetables[month] and "BF2" in timetables[month][day] and timetables[month][day]["BF2"][0] != "":
+			hit[idx] = True
+			hit_one = True
+			file_day = d
+		idx += 1
+	if not hit_one:
+		return
+
+	if file_day.month < 10:
+		file_day_month = "0" + str(file_day.month)
+	else:
+		file_day_month = str(file_day.month)
+	dir_path = "restore" + util.year + "/" + file_day_month
+	file_path = dir_path + "/" + util.year + "_" + str(file_day.isocalendar()[1]) + "week_bs181.html"
+	if not os.path.isdir(dir_path):
+		os.makedirs(dir_path)
+	outfile = open(file_path, "w")
+	outfile.write('<html><head><meta charset="utf-8" /></head><body>\n')
+	outfile.write('<nav class="time_tab weekly">\n')
+	outfile.write(days_tag + '\n')
+	outfile.write('</nav>\n')
+	outfile.write('<div class="timetable_content">\n')
+	for d in days:
+		outfile.write('<article class="program" style="grid-row: 0/0;"><p class="time">4:00</p><p class="title">開始</p></article>\n')
+		outfile.write('<article class="program" style="grid-row: 1500/0;"><p class="time">29:00</p><p class="title">終了</p></article>\n')
+	outfile.write('</div>\n')
+	outfile.write('</body></html>\n')
+	outfile.close()
+
+	chunks_of_day = []
+
+	for d in days:
+		if d == None:
+			continue
+		if d.month < 10:
+			month = "0" + str(d.month)
+		else:
+			month = str(d.month)
+		if d.day < 10:
+			day = "0" + str(d.day)
+		else:
+			day = str(d.day)
+
+		if not(month in timetables and day in timetables[month] and "BF2" in timetables[month][day] and timetables[month][day]["BF2"][0] != ""):
+			chunks_of_day.append([])
+			continue
+
+		idx = 0
+		height = 0
+
+		chunks = []
+
+		for c in timetables[month][day]["BF2"]:
+			if c not in timetables[month][day]["BS8"]:
+				splited = c.split(":")
+				if len(splited) == 1:
+					interval = util.get_interval(util.time_decode_base60(timetables[month][day]["BF2"][idx]), util.time_decode_base60(timetables[month][day]["BF2"][idx+1]))
+				else:
+					interval = (int)(splited[1])
+				h_m = (int)(util.time_decode_base60(c))
+				minute = math.floor(h_m/100)*60+(h_m%100)
+				if minute-height != 0:
+					chunks.append({"top":height, "height":minute-height, "chunk":""})
+					height += minute-height
+				chunks.append({"top":height, "height":interval, "chunk":c})
+				height += interval
+			idx += 1
+		chunks.append({"top":height, "height":60*30-height, "chunk":""})
+		chunks_of_day.append(chunks)
+
+	file_path = dir_path + "/" + util.year + "_" + str(file_day.isocalendar()[1]) + "week_bs182.html"
+	outfile = open(file_path, "w")
+	outfile.write('<html><head><meta charset="utf-8" /></head><body>\n')
+
+	outfile.write('<nav class="time_tab weekly">\n')
+	outfile.write(days_tag + '\n')
+	outfile.write('</nav>\n')
+	outfile.write('<div class="timetable_content">\n')
+
+	for chunks in chunks_of_day:
+		outfile.write('<article class="program" style="grid-row: 0/0;"><p class="time">4:00</p><p class="title">開始</p></article>\n')
+
+		for chunk in chunks:
+			if chunk["chunk"] == "":
+				continue
+
+			category, types, title_id, chapter_id, desc_id, interval, splited_by_space = read_chunk(chunk["chunk"])
+
+			types_string = ""
+			for t in types:
+				if t == "新":
+					types_string += '<li>新番組</li>'
+				elif t == "終":
+					types_string += '<li>最終回</li>'
+				elif t == "生":
+					types_string += '<li>生放送</li>'
+				elif t == "再":
+					types_string += '<li>再放送</li>'
+				elif t == "二":
+					types_string += '<li>二カ国語放送</li>'
+				elif t == "字":
+					types_string += '<li>字幕</li>'
+				elif t == "デ":
+					types_string += '<li>データ放送</li>'
+
+			full_title = decode_string(titles[title_id][0])
+			if splited_by_space:
+				full_title += " "
+			if chapter_id != None:
+				full_title += decode_string(titles[title_id][1][chapter_id])
+
+			m = util.time_decode_base60(chunk["chunk"])
+			hour = str(m)[:2]
+			if hour[0] == "0":
+				hour = hour[1:]
+			minute = str(m)[-2:]
+
+			if chunk["chunk"] != "":
+				outfile.write('<article class="program" style="grid-row: 0/' + str(chunk["height"]) + ';">\n')
+				outfile.write('<p class="time">' + hour + ':' + minute + '</p>\n')
+				outfile.write('<p class="title">' + full_title + '</p>\n')
+				outfile.write('<ul class="icons">' + types_string + '</ul>\n')
+				outfile.write('<p class="text">' + decode_string(descriptions[desc_id]) + '</p>\n')
+				outfile.write('</article>\n')
+
+		outfile.write('<article class="program" style="grid-row: 1500/0;"><p class="time">29:00</p><p class="title">終了</p></article>\n')
+
+	outfile.write('</div>\n')
+	outfile.write('</body></html>\n')
+	outfile.close()
+
 
 
 if __name__ == "__main__":
@@ -2022,7 +2082,7 @@ if __name__ == "__main__":
 			output_html_gtv(util.year, month, day)
 			output_html_mietv(util.year, month, day)
 			output_html_suntv(util.year, month, day)
-			output_html_bs6_bs8_tvk2(util.year, month, day)
+			output_html_bs6_tvk2(util.year, month, day)
 			for nhk_area in nhk.nhk_areas:
 				output_html_nhk(util.year, month, day, nhk_area)
 			print(util.year+"-"+month+"-"+day)
@@ -2036,6 +2096,8 @@ if __name__ == "__main__":
 		days.append(d)
 		if d.weekday() == 6:
 			output_html_bs4(days)
+			output_html_bs8(days)
 			days = []
 		d += datetime.timedelta(days=1)
 	output_html_bs4(days)
+	output_html_bs8(days)

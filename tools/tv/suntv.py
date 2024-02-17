@@ -100,5 +100,9 @@ def getCategoryCode(title_name):
 		return "101107"
 	elif title_name == "5時に夢中!":
 		return "102100"
+	elif title_name == "テレビショッピング":
+		return "102104"
+	elif "海の風景" in title_name:
+		return "108102"
 	else:
 		return "115115"

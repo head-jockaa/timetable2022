@@ -10,6 +10,7 @@ import mietv
 import suntv
 import nhk
 import bs4
+import bs8
 
 def create_diff(s, start_date, types, name_id, chapter_id, category, splited_by_space, desc_id):
 	result, title_omitted, desc_omitted = util.create_diff(s, start_date, types, name_id, chapter_id, category, splited_by_space, desc_id)
@@ -44,6 +45,7 @@ def get_timetable(year, month, day, area):
 		util.already.add(station_tag)
 
 		chunk = ""
+		name_id = None
 		isFirst = True
 		isYesterday = False
 		pre_esterday = False
@@ -76,6 +78,8 @@ def get_timetable(year, month, day, area):
 					elif not toDelete:
 						chunk = create_diff(station_tag, start_time, [], None, None, None, None, None)
 						programs.append(chunk)
+						# この name_id = None は、最後の番組が「情報なし」であることを表す
+						name_id = None
 					else:
 						start_time = pre_start_time_rollback
 				continue
@@ -150,7 +154,7 @@ def get_timetable(year, month, day, area):
 			isFirst = False
 
 		# 最後の「情報なし」は省略する
-		if "?" in chunk:
+		if len(programs) > 0 and name_id == None:
 			start_time = pre_start_time
 			del programs[-1]
 			if station_tag in util.main_channels:
@@ -367,8 +371,6 @@ def get_timetable_gtv(year, month, day):
 		for chunk in util.fetch_gaps("GTV2", gap_from, gap_to):
 			programs.append(chunk[:2])
 		gap_from = util.add_interval(False, start_time, interval)
-#		if pad_time != None:
-#			gap_to = start_time
 
 		# 群馬テレビ2の番組を挿入
 		if pad_time != None:
@@ -516,7 +518,7 @@ def get_timetable_mietv(year, month, day):
 		summary = mietv.extractDescriptions(item_part)
 		desc_id = get_description_id(summary)
 
-		if start_time <= "0500":
+		if start_time <= "0450":
 			# 翌日深夜
 			continue
 
@@ -889,6 +891,10 @@ def get_timetable_bs4(year, month, day):
 	gap_to = None
 	programs = []
 	for d in diff:
+		# パッチあて(削除)
+		toDelete, delete_interval = patch.delete("BN2", d["start"])
+		if toDelete:
+			continue
 
 		# チャンネル1の番組を埋める
 		gap_to = d["start"]
@@ -941,7 +947,6 @@ def get_timetable_bs4(year, month, day):
 	programs2[-1] += ":" + str(util.standard_lasttime_interval["BS4"])
 
 	return {"name":"BN2", "programs":programs2}
-
 
 
 
@@ -1010,31 +1015,52 @@ def get_timetable_bs6(year, month, day):
 	return {"name":"BB2", "programs":programs2}
 
 def get_timetable_bs8(year, month, day):
-	# BSフジのサブチャンネルは情報がないため patch.txt から作る
+	result1 = bs8.get_html_bs181(year, month, day)
+	result2 = bs8.get_html_bs182(year, month, day)
+	if not result1 or not result2:
+		return {"name":"BF2", "programs":[]}
+
+	result1 = bs8.extractTimetableOf(bs8.htmldata_bs181, year, month, day)
+	result2 = bs8.extractTimetableOf(bs8.htmldata_bs182, year, month, day)
+	diff = []
+	for r in result2:
+		if r not in result1:
+			diff.append(r)
+
 	gap_from = None
 	gap_to = None
 	programs = []
-	items = patch.add("BF2", None, None)
-	for item in items:
-		start_time = item["time"]
-		types, title_string = tvkingdom.extractIconsFromTitle(item["title"])
-		title_name, chapter_name, splited_by_space = util.split_title_chapter(title_string, "BF2", year, month)
-		name_id, chapter_id = get_title_id(title_name, chapter_name)
-		genre_code = item["code"]
-		summary = item["desc"]
-		desc_id = get_description_id(summary)
-		interval = item["interval"]
+	for d in diff:
 
-		# ch181の番組を埋める
-		gap_to = start_time
+		# チャンネル1の番組を埋める
+		gap_to = d["start"]
 		for chunk in util.fetch_gaps("BF2", gap_from, gap_to):
 			programs.append(chunk[:2])
-		gap_from = util.add_interval(False, start_time, interval)
+		gap_from = util.add_interval(False, d["start"], d["interval"])
 
-		chunk = create_diff("BF2", start_time, types, name_id, chapter_id, genre_code, splited_by_space, desc_id)
-		programs.append(chunk)
+		title_name, chapter_name, splited_by_space = util.split_title_chapter(d["title"], "BF2", year, month)
+		start_time = d["start"]
+		summary = d["desc"]
 
-	# ch181の番組を埋める
+		# パッチあて(修正)
+		mod_time, mod_code, mod_title_with_icon, mod_desc, mod_interval = patch.modify("BF2", start_time)
+		if mod_time != None:
+			start_time = mod_time
+		if mod_desc != None:
+			summary = mod_desc
+
+		if mod_code != None:
+			genre_code = mod_code
+		else:
+			genre_code = bs8.getCategoryCode(title_name)
+
+		name_id, chapter_id = get_title_id(title_name, chapter_name)
+		desc_id = get_description_id(summary)
+
+		bar = create_diff("BF2", start_time, d["types"], name_id, chapter_id, genre_code, splited_by_space, desc_id)
+		programs.append(bar)
+
+	# チャンネル1の番組を埋める
 	gap_to = None
 	for chunk in util.fetch_gaps("BF2", gap_from, gap_to):
 		programs.append(chunk[:2])
@@ -1205,9 +1231,6 @@ def get_timetable_tvk2(year, month, day):
 		programs2[-1] += ":" + str(util.standard_lasttime_interval["TVK"])
 
 	return {"name":"TVK2", "programs":programs2}
-
-
-
 
 
 
@@ -1457,16 +1480,6 @@ if __name__ == "__main__":
 			for program in station["programs"]:
 				outfile.write(program)
 			outfile.write("\"")
-			# 群馬テレビ2
-#			station = get_timetable_gtv2(util.year, month, day)
-#			if station != None:
-#				if not isFirstStation:
-#					outfile.write(",\r\n")
-#				isFirstStation = False
-#				outfile.write(station["name"] + ":\"")
-#				for program in station["programs"]:
-#					outfile.write(program)
-#				outfile.write("\"")
 			# テレビ神奈川2
 			station = get_timetable_tvk2(util.year, month, day)
 			if station != None:

@@ -470,9 +470,9 @@ def get_station_name_tag(s, area):
 		return "OTV"
 	elif s == "琉球朝日放送":
 		return "QAB"
-	elif s == "ＮＨＫ ＢＳ１":
+	elif s == "ＮＨＫ ＢＳ１" or s == "ＮＨＫ ＢＳ":
 		return "BS1"
-	elif s == "ＮＨＫ ＢＳプレミアム":
+	elif s == "ＮＨＫ ＢＳプレミアム" or (area == "bs1" and s == "ＮＨＫ"):
 		return "BSp"
 	elif s == "ＢＳ日テレ":
 		return "BS4"
@@ -534,7 +534,7 @@ def get_station_name_tag(s, area):
 		return "BST"
 	elif s == "BSJapanext":
 		return "BSJ"
-	elif s == "NHK BS4K":
+	elif s == "NHK BS4K" or s == "NHK BSP4K":
 		return "FK1"
 	elif s == "BS日テレ 4K":
 		return "FK4"
